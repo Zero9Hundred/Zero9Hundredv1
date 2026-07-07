@@ -57,6 +57,7 @@
 <body>
 <div id="diagCheck" style="text-align:center; font-size:11px; color:#e2604f; padding:6px; font-family:monospace;">⚠ JS not running yet…</div>
 <script>document.getElementById('diagCheck').textContent = '✓ JS is running — page loaded OK';</script>
+<div id="debugLog" style="background:#000; border:1px solid #333; margin:6px; padding:8px; font-family:monospace; font-size:10px; color:#7fdc7f; max-height:180px; overflow-y:auto; white-space:pre-wrap; line-height:1.5;">Waiting for main script…</div>
 
 <div class="app">
 
@@ -94,6 +95,20 @@
 
 <script>
   // ============================================================
+  // ON-PAGE DEBUG LOG — prints execution steps directly onto the screen.
+  // Temporary diagnostic aid: lets us see exactly how far the script gets
+  // on a real device without needing browser dev tools (not available on
+  // mobile Safari without a connected Mac). Remove once the real bug is found.
+  // ============================================================
+  const debugLogEl = document.getElementById('debugLog');
+  let debugLines = [];
+  function logDebug(msg, isError) {
+    debugLines.push((isError ? '✗ ' : '• ') + msg);
+    if (debugLogEl) debugLogEl.textContent = debugLines.join('\n');
+    if (isError) console.error(msg); else console.log(msg);
+  }
+  logDebug('Main script block started');
+
   // SUPABASE CONFIG — REPLACE THESE TWO VALUES.
   // Find them in your Supabase dashboard: Project Settings > API.
   // The anon/public key is safe to expose client-side — it's not a secret,
@@ -104,6 +119,7 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
 
   const CONFIG_MISSING = SUPABASE_URL.startsWith('YOUR_') || SUPABASE_ANON_KEY.startsWith('YOUR_');
+  logDebug('CONFIG_MISSING = ' + CONFIG_MISSING);
 
   // Surface any uncaught error visibly rather than letting it silently vanish
   // into the console — this is what would have shown the real cause of the
@@ -127,14 +143,22 @@
 
   let supabase = null;
   let LIBRARY_FAILED_TO_LOAD = false;
+  logDebug('typeof window.supabase = ' + typeof window.supabase);
   if (!CONFIG_MISSING) {
     if (typeof window.supabase === 'undefined') {
       // The CDN script didn't load at all — common if this file is opened
       // directly from local storage (file://) rather than a real hosted page,
       // since some browsers restrict cross-origin script loading under file://.
       LIBRARY_FAILED_TO_LOAD = true;
+      logDebug('Supabase library did not load from CDN', true);
     } else {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      try {
+        logDebug('Calling createClient()…');
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        logDebug('createClient() succeeded, supabase client ready');
+      } catch (initErr) {
+        logDebug('createClient() THREW: ' + initErr.message, true);
+      }
     }
   }
 
@@ -155,6 +179,7 @@
     ]);
   }
 
+  logDebug('Grabbing DOM elements…');
   const signInTab = document.getElementById('signInTab');
   const signUpTab = document.getElementById('signUpTab');
   const authForm = document.getElementById('authForm');
@@ -163,6 +188,7 @@
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const finePrint = document.getElementById('finePrint');
+  logDebug('signInTab found: ' + !!signInTab + ' | signUpTab found: ' + !!signUpTab);
 
   let mode = 'signin'; // 'signin' | 'signup'
 
@@ -189,8 +215,13 @@
     statusMsg.className = 'status-msg';
   }
 
-  signInTab.addEventListener('click', () => setMode('signin'));
-  signUpTab.addEventListener('click', () => setMode('signup'));
+  try {
+    signInTab.addEventListener('click', () => setMode('signin'));
+    signUpTab.addEventListener('click', () => setMode('signup'));
+    logDebug('Tab click listeners attached OK — tabs should switch now');
+  } catch (tabErr) {
+    logDebug('Attaching tab listeners THREW: ' + tabErr.message, true);
+  }
 
   // ---- Fast path for returning users: check for an existing session before
   // making them log in again. getSession() reads local storage first — it's
