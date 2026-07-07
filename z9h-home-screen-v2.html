@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Z9H — Home Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050608;
+    --surface:#0D0F14;
+    --surface-alt:#12151B;
+    --border:#202530;
+    --platinum:#C6CED4;
+    --signal:#4E89FF;
+    --text:#F1F3F7;
+    --text-dim:#8A9199;
+    --text-faint:#54595E;
+    --radius:16px;
+    --path-accent:#4E89FF; /* Adaptive Theme Layer v1 token — mocked here equal to signal blue since Calisthenics is the only live path */
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{ display:flex; justify-content:center; min-height:100vh; }
+  .app{ width:100%; max-width:430px; min-height:100vh; position:relative; padding-bottom:96px; }
+
+  /* ---------- HEADER ---------- */
+  header{ display:flex; align-items:center; justify-content:center; padding:8px 14px 0 14px; }
+  header .wordmark{ text-align:center; overflow:hidden; }
+
+  /* ---------- WORDMARK ---------- */
+  .wordmark-block{ text-align:center; padding:6px 16px 8px 16px; }
+  .wordmark{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
+  .wordmark .accent-blue{ color:var(--signal); }
+  .wordmark-tagline{ margin-top:8px; font-family:'Oswald',sans-serif; font-weight:500; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--platinum); white-space:nowrap; }
+  .path-badge{ display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:5px 12px; border-radius:20px; background:var(--surface); border:1px solid var(--border); font-family:'Inter'; font-weight:600; font-size:11px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-dim); cursor:pointer; -webkit-appearance:none; appearance:none; }
+  .path-badge:active{ opacity:0.7; }
+  .path-dot{ width:6px; height:6px; border-radius:50%; background:var(--signal); flex-shrink:0; }
+  .path-chevron{ width:10px; height:10px; stroke:var(--text-faint); fill:none; margin-left:1px; }
+
+  /* ---------- SECTION LABEL ---------- */
+  .eyebrow{ font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-bottom:10px; display:block; }
+  .section{ padding:0 20px; margin-bottom:14px; }
+
+  /* ---------- TIME ALLOCATION ---------- */
+  .pill-row{ display:flex; gap:6px; }
+  .pill{
+    position:relative; flex:1; display:flex; align-items:center; justify-content:center; gap:4px;
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    border-radius:20px; padding:8px 2px; cursor:pointer; transition:all 0.15s ease;
+    font-family:'Inter'; font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.2px;
+  }
+  .pill svg{ width:11px; height:11px; stroke:var(--text-dim); fill:none; flex-shrink:0; transition:stroke 0.15s ease; }
+  .pill:active{ opacity:0.7; }
+  .pill.active{
+    border-color:var(--path-accent);
+    color:var(--path-accent);
+    background:radial-gradient(circle, color-mix(in srgb, var(--path-accent) 14%, transparent), transparent 70%);
+    box-shadow:0 0 14px -3px var(--path-accent);
+  }
+  .pill.active svg{ stroke:var(--path-accent); }
+
+  /* ---------- HERO MISSION CARD ---------- */
+  .hero-card{ position:relative; background:radial-gradient(circle at 85% -10%, rgba(78,137,255,0.08), transparent 55%), var(--surface); border:1px solid var(--border); border-radius:22px; padding:20px 22px 18px 22px; overflow:hidden; transition:all 0.2s ease; }
+  .hero-card .corner{ position:absolute; width:18px; height:18px; pointer-events:none; }
+  .hero-card .corner.tl{ top:12px; left:12px; border-top:2px solid var(--border); border-left:2px solid var(--border); }
+  .hero-card .corner.tr{ top:12px; right:12px; border-top:2px solid var(--border); border-right:2px solid var(--border); }
+  .hero-card .corner.bl{ bottom:12px; left:12px; border-bottom:2px solid var(--border); border-left:2px solid var(--border); }
+  .hero-card .corner.br{ bottom:12px; right:12px; border-bottom:2px solid var(--border); border-right:2px solid var(--border); }
+
+  .hero-texture{ position:absolute; top:-40px; right:-40px; width:220px; height:220px; opacity:0.04; pointer-events:none; }
+  .hero-texture svg{ width:100%; height:100%; stroke:var(--signal); fill:none; }
+  .hero-monogram{ position:absolute; bottom:-14px; right:6px; font-family:'Oswald',sans-serif; font-weight:700; font-size:96px; letter-spacing:2px; color:var(--platinum); opacity:0.03; pointer-events:none; line-height:1; }
+
+  .hero-inner{ position:relative; z-index:1; }
+  .mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:25px; line-height:1.1; margin:2px 0 12px 0; color:var(--text); letter-spacing:-0.3px; }
+
+  .mission-brief{ border-left:2px solid var(--platinum); padding-left:14px; margin-bottom:16px; }
+  .brief-label{ display:block; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--text-faint); font-weight:600; margin-bottom:4px; }
+  .brief-text{ margin:0; font-size:14px; line-height:1.45; color:var(--text-dim); font-style:italic; }
+
+  .exercise-list{ list-style:none; margin:0 0 18px 14px; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .exercise-list li{ font-size:12.5px; color:var(--platinum); display:flex; align-items:center; gap:8px; }
+  .exercise-list li::before{ content:''; width:4px; height:4px; border-radius:50%; background:var(--path-accent); flex-shrink:0; }
+  .exercise-list.pending li{ color:var(--text-faint); font-style:italic; }
+  .exercise-list.pending li::before{ background:var(--text-faint); }
+
+  .mission-tags{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tag{ font-size:11px; font-weight:600; letter-spacing:0.5px; padding:7px 13px; border-radius:20px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-dim); text-transform:uppercase; display:flex; align-items:center; gap:5px; }
+  .tag svg{ width:12px; height:12px; stroke:var(--text-dim); fill:none; }
+  .tag.tag-glow{
+    border-color:var(--path-accent);
+    color:var(--path-accent);
+    background:radial-gradient(circle, color-mix(in srgb, var(--path-accent) 14%, transparent), transparent 70%);
+    box-shadow:0 0 14px -3px var(--path-accent);
+  }
+  .tag.tag-glow svg{ stroke:var(--path-accent); }
+
+  /* ---------- INTENSITY TIER (NEW) ---------- */
+  .intensity-block{ margin-bottom:14px; }
+  .intensity-label{ display:block; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-bottom:8px; }
+  .intensity-row{ display:flex; gap:8px; }
+  .intensity-pill{ flex:1; text-align:center; padding:9px 4px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text-dim); font-family:'Inter'; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; cursor:pointer; transition:all 0.15s ease; }
+  .intensity-pill:active{ opacity:0.7; }
+  .intensity-pill.active{
+    border-color:var(--path-accent);
+    color:var(--path-accent);
+    background:radial-gradient(circle, color-mix(in srgb, var(--path-accent) 14%, transparent), transparent 70%);
+    box-shadow:0 0 14px -3px var(--path-accent);
+  }
+
+  .start-btn{ width:100%; padding:19px; border:none; border-radius:12px; background:var(--signal); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:16px; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 8px 24px -8px rgba(78,137,255,0.4); transition:all 0.15s ease; }
+  .start-btn svg{ width:17px; height:17px; }
+  .start-btn:active{ opacity:0.85; transform:scale(0.98); }
+  .start-btn.confirmed{ background:#2fbf71; box-shadow:0 8px 24px -8px rgba(47,191,113,0.4); }
+
+  /* ---------- BOTTOM NAV ---------- */
+  nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(5,6,8,0.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; z-index:10; }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--text-faint); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; text-decoration:none; min-width:56px; min-height:52px; padding:4px 2px; border-radius:12px; position:relative; }
+  .nav-dot-alert{ position:absolute; top:2px; right:10px; width:6px; height:6px; border-radius:50%; background:var(--signal); }
+  .nav-item svg{ width:23px; height:23px; stroke:var(--text-faint); fill:none; }
+  .nav-item.active{ color:var(--platinum); }
+  .nav-item.active svg{ stroke:var(--platinum); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
+  </header>
+
+  <div class="wordmark-block">
+    <div class="wordmark-tagline">DISCIPLINE. FOCUS. STRENGTH.</div>
+    <button class="path-badge" id="pathBadge" type="button"><span class="path-dot"></span><span id="pathBadgeLabel">Calisthenics</span><svg class="path-chevron" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+  </div>
+
+  <div class="section" style="margin-bottom:10px;">
+    <div class="pill-row">
+      <button class="pill" data-time="5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>5 MIN</button>
+      <button class="pill" data-time="10"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>10 MIN</button>
+      <button class="pill active" data-time="15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>15 MIN</button>
+      <button class="pill" data-time="30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>30 MIN</button>
+      <button class="pill" data-time="45"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>45 MIN</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="eyebrow">Today's Mission</span>
+    <div class="hero-card" id="missionCard">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="hero-texture" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-width="1"/><circle cx="50" cy="50" r="32" stroke-width="1"/><circle cx="50" cy="50" r="18" stroke-width="1"/></svg>
+      </div>
+      <div class="hero-monogram" aria-hidden="true">Z9H</div>
+
+      <div class="hero-inner">
+        <div class="intensity-block">
+          <span class="intensity-label">Training Tier</span>
+          <div class="intensity-row" id="intensityRow">
+            <button class="intensity-pill" data-tier="foundation" type="button">Foundation</button>
+            <button class="intensity-pill active" data-tier="standard" type="button">Standard</button>
+            <button class="intensity-pill" data-tier="advanced" type="button">Advanced</button>
+          </div>
+        </div>
+
+        <div class="mission-title" id="mTitle">Upper Body Push</div>
+
+        <div class="mission-brief">
+          <span class="brief-label">Mission Brief</span>
+          <p class="brief-text" id="briefText">"Complete today's session to protect your 14-day discipline streak."</p>
+        </div>
+
+        <ul class="exercise-list" id="exerciseList"></ul>
+
+        <button class="start-btn" id="startBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span id="startBtnLabel">Start Mission</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <nav aria-label="Primary">
+    <a href="#" class="nav-item active"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="#" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M3 9h6M15 9h6M3 15h6M15 15h6"/></svg>Training</a>
+    <a href="#" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 3v18M5 4h11l-2 4 2 4H5"/></svg>Challenges</a>
+    <a href="z9h-achievements.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-8 0L7 4z"/><path d="M5 4h2v4a3 3 0 0 1-3-3c0-.5.2-1 .5-1zM19 4h-2v4a3 3 0 0 0 3-3c0-.5-.2-1-.5-1z"/></svg>Achievements</a>
+    <a href="#" class="nav-item"><span class="nav-dot-alert"></span><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+  </nav>
+
+</div>
+
+<script>
+  // Mocked profile default — real source will be profile.intensityDefault once onboarding exists
+  // ============================================================
+  // Z9H CROSS-SCREEN STATE — shared handoff mechanism between pages.
+  // Since every screen is a standalone static HTML file (no build step,
+  // no server routing), state passes between them via sessionStorage.
+  // This identical helper is duplicated in every screen file on purpose —
+  // keeping each file self-contained matters more than avoiding repetition,
+  // given how these get deployed (Safari file upload to Netlify).
+  // ============================================================
+  const Z9H = {
+    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+  };
+
+  const PROFILE_DEFAULT_TIER = 'standard';
+  let selectedTier = PROFILE_DEFAULT_TIER;
+
+  const intensityPills = document.querySelectorAll('.intensity-pill');
+  intensityPills.forEach(p => {
+    p.addEventListener('click', () => {
+      intensityPills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      selectedTier = p.getAttribute('data-tier');
+      render();
+    });
+  });
+
+  // ============================================================
+  // MISSION ENGINE REWORK — v2
+  // Old model: each TIME PILL mapped to a totally different mission.
+  // New model: the DAY OF WEEK decides the mission (constant).
+  // Available Time + Training Tier only shape how that mission is delivered
+  // (exercise variant + volume) — they never swap the mission itself.
+  //
+  // DEMO NOTE: every day below is temporarily mapped to the one real
+  // dataset (cali_push_15) so this review can validate the ENGINE
+  // (fixed mission + time scaling + tier progression), not authored
+  // content. Titles are placeholder names for days other than Monday.
+  // Once real datasets exist per day, each maps to its own missionId.
+  // ============================================================
+  const missionCalendar = {
+    sunday:    { missionId: 'sun_weekend_warrior',   title: 'Weekend Warrior',       hasContent: true },
+    monday:    { missionId: 'mon_lower_foundation',  title: 'Lower Body Foundation', hasContent: true },
+    tuesday:   { missionId: 'tue_upper_push',        title: 'Upper Body Push',       hasContent: true },
+    wednesday: { missionId: 'wed_core_stability',    title: 'Core & Stability',      hasContent: true },
+    thursday:  { missionId: 'thu_full_body_circuit', title: 'Full Body Circuit',     hasContent: true },
+    friday:    { missionId: 'fri_endurance_toughness', title: 'Endurance & Toughness', hasContent: true },
+    saturday:  { missionId: 'sat_weekend_warrior',   title: 'Weekend Warrior',       hasContent: true }
+  };
+
+  const dayKeys = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const todayKey = dayKeys[new Date().getDay()];
+  const todaysMission = missionCalendar[todayKey];
+
+  // 2. EXERCISE ENGINE — resolves exercises for a mission based on
+  // Training Tier + Available Time. Each day authors ONE 15-min baseline
+  // per exercise slot (3 tiers each). 30/45-min versions are DERIVED from
+  // that baseline by scaleExercise() below, using the same rule validated
+  // earlier for cali_push_15 — rather than hand-typing three full datasets
+  // per day, which doesn't scale to 7 days and risks numbers drifting out
+  // of sync with each other.
+  //
+  // BUG FIX (this replaces the previous version): every day used to point
+  // at the same generic 'cali_push_15' placeholder dataset regardless of
+  // its title — so "Upper Body Push" contained squats and lunges. Each day
+  // now has its own real missionId and exercises matching its actual name,
+  // taken from Dave's canonical weekly programme.
+  //
+  // STATUS: Validated by Dave (July 2026) — approved as real content across
+  // all 7 days, all 3 tiers. No longer a placeholder/illustrative dataset.
+  const exerciseDatasets = {
+
+    mon_lower_foundation: {
+      brief: "Complete today's session to protect your discipline streak.",
+      rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+      exercises: [
+        { slot:'wallsit', variants: {
+          foundation: { name:'Assisted Wall Sit', type:'timed', sets:3, durationPerSet:15, intraSetRest:20, interExerciseRest:30, prompt:'Hands on thighs for support if needed.' },
+          standard:   { name:'Wall Sit', type:'timed', sets:3, durationPerSet:20, intraSetRest:20, interExerciseRest:30, prompt:'Knees at 90 degrees, back flat against the wall.' },
+          advanced:   { name:'Wall Sit with Alternating Leg Lifts', type:'timed', sets:3, durationPerSet:20, intraSetRest:20, interExerciseRest:30, prompt:'Lift one foot at a time without shifting your hips.' }
+        }},
+        { slot:'squat', variants: {
+          foundation: { name:'Chair-Assisted Squat', type:'reps', sets:3, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Sit back fully onto the chair each rep.' },
+          standard:   { name:'Standing Squat', type:'reps', sets:3, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Drive through your heels on the way up.' },
+          advanced:   { name:'Squat with Pause', type:'reps', sets:3, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Hold two seconds at the bottom of every rep.' }
+        }},
+        { slot:'lunge', variants: {
+          foundation: { name:'Assisted Reverse Lunge', type:'reps', sets:2, repsPerSet:5, intraSetRest:20, interExerciseRest:30, prompt:'Light hand support is fine — focus on control.' },
+          standard:   { name:'Reverse Lunge', type:'reps', sets:2, repsPerSet:5, intraSetRest:20, interExerciseRest:30, prompt:'Step back with control, alternate legs each rep.' },
+          advanced:   { name:'Reverse Lunge with Knee Drive', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Drive the rear knee up to hip height as you rise.' }
+        }},
+        { slot:'calf', variants: {
+          foundation: { name:'Assisted Calf Raise', type:'reps', sets:2, repsPerSet:15, intraSetRest:15, interExerciseRest:0, prompt:'Hold a wall or chair for balance.' },
+          standard:   { name:'Calf Raise', type:'reps', sets:2, repsPerSet:15, intraSetRest:15, interExerciseRest:0, prompt:'Rise slowly, pause at the top of every rep.' },
+          advanced:   { name:'Single-Leg Calf Raise', type:'reps', sets:2, repsPerSet:12, intraSetRest:15, interExerciseRest:0, prompt:'Keep your standing knee soft, not locked.' }
+        }}
+      ]
+    },
+
+    tue_upper_push: {
+      brief: "Complete today's session to protect your discipline streak.",
+      rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+      exercises: [
+        { slot:'push1', variants: {
+          foundation: { name:'Wall Push-Up (narrow stance)', type:'reps', sets:3, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Slow tempo — control the lower and the push.' },
+          standard:   { name:'Wall Push-Up', type:'reps', sets:3, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Keep hips squared to the wall throughout.' },
+          advanced:   { name:'Incline Push-Up', type:'reps', sets:3, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Use a stair or low bench — lock out fully.' }
+        }},
+        { slot:'push2', variants: {
+          foundation: { name:'Wall Push-Up', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Same as before — build the pattern.' },
+          standard:   { name:'Incline Push-Up', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Hands on a stair or sturdy chair.' },
+          advanced:   { name:'Push-Up', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Full range — knees down is fine if needed.' }
+        }},
+        { slot:'shouldertap', variants: {
+          foundation: { name:'Shoulder Taps (wide base)', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Feet wide for stability, move slowly.' },
+          standard:   { name:'Shoulder Taps', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Minimise hip rocking with every tap.' },
+          advanced:   { name:'Shoulder Taps in Plank Hold', type:'reps', sets:2, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Hold a strong plank the entire set.' }
+        }},
+        { slot:'dips', variants: {
+          foundation: { name:'Assisted Tricep Dip', type:'reps', sets:2, repsPerSet:6, intraSetRest:15, interExerciseRest:0, prompt:'Bend knees, feet close to the chair.' },
+          standard:   { name:'Tricep Dips', type:'reps', sets:2, repsPerSet:8, intraSetRest:15, interExerciseRest:0, prompt:'Use a stable chair, lower with control.' },
+          advanced:   { name:'Tricep Dips (legs extended)', type:'reps', sets:2, repsPerSet:10, intraSetRest:15, interExerciseRest:0, prompt:'Straighten your legs to add load.' }
+        }}
+      ]
+    },
+
+    wed_core_stability: {
+      brief: "Complete today's session to protect your discipline streak.",
+      rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+      exercises: [
+        { slot:'march', variants: {
+          foundation: { name:'Standing March', type:'timed', sets:1, durationPerSet:90, intraSetRest:20, interExerciseRest:30, prompt:'Steady pace — this is your warm-up.' },
+          standard:   { name:'Standing March', type:'timed', sets:1, durationPerSet:120, intraSetRest:20, interExerciseRest:30, prompt:'Drive your knees to hip height.' },
+          advanced:   { name:'High-Knee March', type:'timed', sets:1, durationPerSet:120, intraSetRest:20, interExerciseRest:30, prompt:'Add pace without losing posture.' }
+        }},
+        { slot:'deadbug', variants: {
+          foundation: { name:'Dead Bug Hold (one side)', type:'timed', sets:3, durationPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Press your lower back flat into the floor.' },
+          standard:   { name:'Dead Bug Hold', type:'timed', sets:3, durationPerSet:15, intraSetRest:20, interExerciseRest:30, prompt:'Opposite arm and leg extended, core braced.' },
+          advanced:   { name:'Dead Bug with Extended Reach', type:'timed', sets:3, durationPerSet:15, intraSetRest:20, interExerciseRest:30, prompt:'Reach fully without the lower back arching.' }
+        }},
+        { slot:'sidebend', variants: {
+          foundation: { name:'Side Bends (supported)', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Light hand support against a wall if needed.' },
+          standard:   { name:'Side Bends', type:'reps', sets:2, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Slow and controlled, alternate each side.' },
+          advanced:   { name:'Side Bends with Pause', type:'reps', sets:2, repsPerSet:12, intraSetRest:20, interExerciseRest:30, prompt:'Hold briefly at the deepest point each rep.' }
+        }},
+        { slot:'plank', variants: {
+          foundation: { name:'Plank on Knees (short hold)', type:'timed', sets:3, durationPerSet:10, intraSetRest:15, interExerciseRest:0, prompt:'Hips level — no sagging or piking.' },
+          standard:   { name:'Plank on Knees', type:'timed', sets:3, durationPerSet:15, intraSetRest:15, interExerciseRest:0, prompt:'Brace core horizontally, breathe steadily.' },
+          advanced:   { name:'Full Plank', type:'timed', sets:3, durationPerSet:15, intraSetRest:15, interExerciseRest:0, prompt:'Toes down, straight line head to heel.' }
+        }}
+      ]
+    },
+
+    thu_full_body_circuit: {
+      brief: "Complete today's session to protect your discipline streak.",
+      rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+      exercises: [
+        { slot:'squatcalf', variants: {
+          foundation: { name:'Squat to Calf Raise (slow)', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'One smooth motion — squat then rise onto toes.' },
+          standard:   { name:'Squat to Calf Raise', type:'reps', sets:2, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Keep the movement continuous, no pausing.' },
+          advanced:   { name:'Squat to Calf Raise with Pause', type:'reps', sets:2, repsPerSet:12, intraSetRest:20, interExerciseRest:30, prompt:'Pause one second at the top of the calf raise.' }
+        }},
+        { slot:'pushup', variants: {
+          foundation: { name:'Wall Push-Up', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Keep hips squared to the wall.' },
+          standard:   { name:'Wall Push-Up', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Full range, controlled tempo.' },
+          advanced:   { name:'Incline Push-Up', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Use a stair or low bench for extra range.' }
+        }},
+        { slot:'march', variants: {
+          foundation: { name:'Standing March', type:'timed', sets:1, durationPerSet:60, intraSetRest:20, interExerciseRest:30, prompt:'Steady recovery pace between the strength moves.' },
+          standard:   { name:'Standing March', type:'timed', sets:1, durationPerSet:90, intraSetRest:20, interExerciseRest:30, prompt:'Keep your breathing controlled.' },
+          advanced:   { name:'High-Knee March', type:'timed', sets:1, durationPerSet:90, intraSetRest:20, interExerciseRest:30, prompt:'Add pace while keeping posture tall.' }
+        }},
+        { slot:'glutebridge', variants: {
+          foundation: { name:'Glute Bridge (small range)', type:'reps', sets:2, repsPerSet:8, intraSetRest:15, interExerciseRest:0, prompt:'Squeeze at the top of every rep.' },
+          standard:   { name:'Glute Bridge', type:'reps', sets:2, repsPerSet:10, intraSetRest:15, interExerciseRest:0, prompt:'Drive through your heels, pause at the top.' },
+          advanced:   { name:'Single-Leg Glute Bridge', type:'reps', sets:2, repsPerSet:8, intraSetRest:15, interExerciseRest:0, prompt:'Keep your hips level throughout.' }
+        }}
+      ]
+    },
+
+    fri_endurance_toughness: {
+      brief: "Complete today's session to protect your discipline streak.",
+      rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+      exercises: [
+        { slot:'steptouch', variants: {
+          foundation: { name:'Step Touches (slow)', type:'timed', sets:1, durationPerSet:120, intraSetRest:20, interExerciseRest:30, prompt:'Easy side-to-side pace to open the session.' },
+          standard:   { name:'Step Touches', type:'timed', sets:1, durationPerSet:180, intraSetRest:20, interExerciseRest:30, prompt:'Steady rhythm, light on your feet.' },
+          advanced:   { name:'Step Touches with Arm Drive', type:'timed', sets:1, durationPerSet:180, intraSetRest:20, interExerciseRest:30, prompt:'Add arm swings to raise the intensity.' }
+        }},
+        { slot:'squathold', variants: {
+          foundation: { name:'Squat Hold (partial depth)', type:'timed', sets:3, durationPerSet:15, intraSetRest:20, interExerciseRest:30, prompt:'Only go as low as feels controlled.' },
+          standard:   { name:'Squat Hold', type:'timed', sets:3, durationPerSet:20, intraSetRest:20, interExerciseRest:30, prompt:'Thighs parallel to the ground, hold steady.' },
+          advanced:   { name:'Squat Hold (deep)', type:'timed', sets:3, durationPerSet:25, intraSetRest:20, interExerciseRest:30, prompt:'Sink lower and hold your position.' }
+        }},
+        { slot:'burpee', variants: {
+          foundation: { name:'Step-Back Modified Burpee', type:'reps', sets:2, repsPerSet:4, intraSetRest:20, interExerciseRest:30, prompt:'Step back one leg at a time, no jump needed.' },
+          standard:   { name:'Modified Burpee', type:'reps', sets:2, repsPerSet:5, intraSetRest:20, interExerciseRest:30, prompt:'Move with control, prioritise form over speed.' },
+          advanced:   { name:'Burpee', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Full jump back and jump up, chest up on landing.' }
+        }},
+        { slot:'victorymarch', variants: {
+          foundation: { name:'Victory March (slow)', type:'timed', sets:1, durationPerSet:90, intraSetRest:0, interExerciseRest:0, prompt:'Arms overhead, steady breathing to finish.' },
+          standard:   { name:'Victory March', type:'timed', sets:1, durationPerSet:120, intraSetRest:0, interExerciseRest:0, prompt:'Head up, arms driving — you earned this.' },
+          advanced:   { name:'Victory March with High Knees', type:'timed', sets:1, durationPerSet:120, intraSetRest:0, interExerciseRest:0, prompt:'Finish strong — full effort to the last second.' }
+        }}
+      ]
+    },
+
+    sat_weekend_warrior: {
+      brief: "Optional bonus session — this does NOT affect your streak either way.",
+      rewards: { xp: 80, streakMessage: "Bonus Session Complete. Streak unaffected." },
+      exercises: [
+        { slot:'easymarch', variants: {
+          foundation: { name:'Easy March (seated option)', type:'timed', sets:1, durationPerSet:240, intraSetRest:20, interExerciseRest:30, prompt:'Seated marching is fine if you prefer.' },
+          standard:   { name:'Easy March', type:'timed', sets:1, durationPerSet:300, intraSetRest:20, interExerciseRest:30, prompt:'Relaxed pace — this is recovery, not effort.' },
+          advanced:   { name:'Easy March with Arm Circles', type:'timed', sets:1, durationPerSet:300, intraSetRest:20, interExerciseRest:30, prompt:'Add gentle arm circles as you march.' }
+        }},
+        { slot:'gentlesquat', variants: {
+          foundation: { name:'Gentle Squat (chair-assisted)', type:'reps', sets:2, repsPerSet:6, intraSetRest:20, interExerciseRest:30, prompt:'Use the chair for as much support as you need.' },
+          standard:   { name:'Gentle Squats', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Easy pace, comfortable depth.' },
+          advanced:   { name:'Gentle Squats with Pause', type:'reps', sets:2, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Brief pause at the bottom, still easy effort.' }
+        }},
+        { slot:'stretch', variants: {
+          foundation: { name:'Stretch Series (short hold)', type:'timed', sets:1, durationPerSet:45, intraSetRest:0, interExerciseRest:30, prompt:'Move through whatever feels tight today.' },
+          standard:   { name:'Stretch Series', type:'timed', sets:1, durationPerSet:60, intraSetRest:0, interExerciseRest:30, prompt:'Hold each stretch without bouncing.' },
+          advanced:   { name:'Stretch Series (extended hold)', type:'timed', sets:1, durationPerSet:75, intraSetRest:0, interExerciseRest:30, prompt:'Sink a little deeper into each hold.' }
+        }},
+        { slot:'breathing', variants: {
+          foundation: { name:'Deep Breathing', type:'timed', sets:1, durationPerSet:90, intraSetRest:0, interExerciseRest:0, prompt:'Slow inhale, slower exhale. No rush.' },
+          standard:   { name:'Deep Breathing', type:'timed', sets:1, durationPerSet:120, intraSetRest:0, interExerciseRest:0, prompt:'Let your shoulders drop with every exhale.' },
+          advanced:   { name:'Deep Breathing (extended)', type:'timed', sets:1, durationPerSet:150, intraSetRest:0, interExerciseRest:0, prompt:'Extend the exhale longer than the inhale.' }
+        }}
+      ]
+    },
+
+    sun_weekend_warrior: {
+      brief: "Optional bonus session — this does NOT affect your streak either way.",
+      rewards: { xp: 80, streakMessage: "Bonus Session Complete. Streak unaffected." },
+      exercises: [
+        { slot:'walkspot', variants: {
+          foundation: { name:'Walking on Spot (seated option)', type:'timed', sets:1, durationPerSet:240, intraSetRest:20, interExerciseRest:30, prompt:'Seated marching works just as well.' },
+          standard:   { name:'Walking on Spot', type:'timed', sets:1, durationPerSet:300, intraSetRest:20, interExerciseRest:30, prompt:'Easy, relaxed pace.' },
+          advanced:   { name:'Walking on Spot with High Knees', type:'timed', sets:1, durationPerSet:300, intraSetRest:20, interExerciseRest:30, prompt:'Lift your knees a little higher.' }
+        }},
+        { slot:'kneeraise', variants: {
+          foundation: { name:'Knee Raises (supported)', type:'reps', sets:2, repsPerSet:8, intraSetRest:20, interExerciseRest:30, prompt:'Hold a wall or chair for balance.' },
+          standard:   { name:'Knee Raises', type:'reps', sets:2, repsPerSet:10, intraSetRest:20, interExerciseRest:30, prompt:'Lift with control, alternate legs.' },
+          advanced:   { name:'Knee Raises (standing, unsupported)', type:'reps', sets:2, repsPerSet:12, intraSetRest:20, interExerciseRest:30, prompt:'No support — focus on balance.' }
+        }},
+        { slot:'sidestretch', variants: {
+          foundation: { name:'Side Stretches (short hold)', type:'timed', sets:1, durationPerSet:20, intraSetRest:0, interExerciseRest:30, prompt:'Reach only as far as feels comfortable.' },
+          standard:   { name:'Side Stretches', type:'timed', sets:1, durationPerSet:30, intraSetRest:0, interExerciseRest:30, prompt:'Reach overhead and lean gently to each side.' },
+          advanced:   { name:'Side Stretches (extended)', type:'timed', sets:1, durationPerSet:40, intraSetRest:0, interExerciseRest:30, prompt:'Hold a little longer on each side.' }
+        }},
+        { slot:'plankhold', variants: {
+          foundation: { name:'Plank Hold on Knees', type:'timed', sets:2, durationPerSet:15, intraSetRest:15, interExerciseRest:0, prompt:'Easy effort — this is a bonus day.' },
+          standard:   { name:'Plank Hold', type:'timed', sets:2, durationPerSet:20, intraSetRest:15, interExerciseRest:0, prompt:'Hold steady, breathe normally.' },
+          advanced:   { name:'Plank Hold (extended)', type:'timed', sets:2, durationPerSet:25, intraSetRest:15, interExerciseRest:0, prompt:'A little longer, still relaxed effort.' }
+        }}
+      ]
+    }
+  };
+
+  // Derives 30/45-min versions from the authored 15-min baseline exercise.
+  // Sets step up +1 per duration tier (15->30->45) rather than doubling —
+  // rest periods and fatigue already stretch real time non-linearly.
+  // Reps get +2 per step, timed holds get +5s per step. Advanced tier also
+  // trims rest by 5s per step (floor 15s) to increase density, not just volume.
+  function scaleExercise(base, tier, timeMinutes) {
+    const steps = { 15: 0, 30: 1, 45: 2 }[timeMinutes] || 0;
+    if (steps === 0) return base;
+
+    const scaled = { ...base, sets: base.sets + steps };
+    if (base.type === 'reps') {
+      scaled.repsPerSet = base.repsPerSet + (steps * 2);
+    } else {
+      scaled.durationPerSet = base.durationPerSet + (steps * 5);
+    }
+    if (tier === 'advanced') {
+      scaled.intraSetRest = Math.max(15, base.intraSetRest - (steps * 5));
+      if (base.interExerciseRest > 0) {
+        scaled.interExerciseRest = Math.max(15, base.interExerciseRest - (steps * 5));
+      }
+    }
+    return scaled;
+  }
+
+  // 5 and 10 min are about scope (fewer exercises), not lighter versions of the
+  // same exercises — they slice from the 15-min baseline list, unscaled.
+  const shortSessionExerciseCount = { 5: 1, 10: 2 };
+
+  function resolveMission(mission, tier, timeMinutes) {
+    if (!mission.hasContent) {
+      return { title: mission.title, brief: 'Content pending — no exercise data authored for this mission yet.', exerciseNames: [], resolvedExercises: [] };
+    }
+    const dataset = exerciseDatasets[mission.missionId];
+    const baseline = dataset.exercises;
+
+    let exercisesForDuration;
+    if (timeMinutes === 15 || timeMinutes === 30 || timeMinutes === 45) {
+      exercisesForDuration = baseline.map(ex => scaleExercise(ex.variants[tier], tier, timeMinutes));
+    } else {
+      // 5/10 min: slice first N exercises from the baseline, unscaled
+      const count = shortSessionExerciseCount[timeMinutes] || baseline.length;
+      exercisesForDuration = baseline.slice(0, count).map(ex => ex.variants[tier]);
+    }
+
+    const exerciseNames = exercisesForDuration.map(ex => ex.name);
+    return { title: mission.title, brief: dataset.brief, exerciseNames, resolvedExercises: exercisesForDuration, rewards: dataset.rewards };
+  }
+
+  const pathBadge = document.getElementById('pathBadge');
+  const pathBadgeLabel = document.getElementById('pathBadgeLabel');
+
+  const activePath = Z9H.get('z9h_active_path', 'calisthenics');
+  const pathHasContent = activePath === 'calisthenics'; // only Calisthenics has real mission data right now
+  pathBadgeLabel.textContent = activePath.charAt(0).toUpperCase() + activePath.slice(1);
+
+  pathBadge.addEventListener('click', () => {
+    window.location.href = 'z9h-path-selection.html';
+  });
+
+  const chips = document.querySelectorAll('.pill');
+  const card = document.getElementById('missionCard');
+  const mTitle = document.getElementById('mTitle');
+  const briefText = document.getElementById('briefText');
+  const exerciseList = document.getElementById('exerciseList');
+  const startBtn = document.getElementById('startBtn');
+  const startBtnLabel = document.getElementById('startBtnLabel');
+
+  // Selected time state — defaults to the pre-active 15 MIN chip, no interaction required
+  let selectedTime = document.querySelector('.pill.active')?.getAttribute('data-time') || "15";
+
+  // Mission title is now fixed by the calendar — it never changes with time or tier.
+  mTitle.textContent = todaysMission.title;
+
+  let currentResolvedMission = null;
+
+  function render() {
+    // Honest placeholder: switching to any path other than Calisthenics has nowhere
+    // real to go yet, since no other path's exercise data has been authored.
+    if (!pathHasContent) {
+      mTitle.textContent = pathBadgeLabel.textContent;
+      briefText.textContent = `"${pathBadgeLabel.textContent} missions haven't been built yet — switch back to Calisthenics to train today."`;
+      exerciseList.innerHTML = '';
+      exerciseList.classList.add('pending');
+      const li = document.createElement('li');
+      li.textContent = 'No content authored for this path yet';
+      exerciseList.appendChild(li);
+      startBtn.disabled = true;
+      startBtn.style.opacity = '0.4';
+      startBtnLabel.textContent = 'Coming Soon';
+      return;
+    }
+
+    const result = resolveMission(todaysMission, selectedTier, Number(selectedTime));
+    currentResolvedMission = result;
+
+    card.style.opacity = '0.4';
+    setTimeout(() => {
+      briefText.textContent = `"${result.brief}"`;
+
+      exerciseList.innerHTML = '';
+      if (result.exerciseNames.length) {
+        exerciseList.classList.remove('pending');
+        result.exerciseNames.forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          exerciseList.appendChild(li);
+        });
+      } else {
+        exerciseList.classList.add('pending');
+        const li = document.createElement('li');
+        li.textContent = 'Exercise content not yet authored for this mission';
+        exerciseList.appendChild(li);
+      }
+
+      card.style.opacity = '1';
+    }, 100);
+  }
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedTime = chip.getAttribute('data-time');
+      render();
+
+      // Reset any prior confirmation state when the selection changes
+      startBtn.classList.remove('confirmed');
+      startBtnLabel.textContent = 'Start Mission';
+    });
+  });
+
+  // Start Mission reads the currently selected time, tier and today's fixed mission,
+  // writes the resolved contract to shared state, then hands off to Mission Engage.
+  startBtn.addEventListener('click', () => {
+    const hasExercises = (currentResolvedMission?.resolvedExercises || []).length > 0;
+
+    if (!hasExercises) {
+      // Guard: don't navigate into a broken Mission Engage screen with nothing to run.
+      startBtnLabel.textContent = 'No Content Yet — Try Calisthenics';
+      setTimeout(() => { startBtnLabel.textContent = 'Start Mission'; }, 1800);
+      return;
+    }
+
+    startBtn.classList.add('confirmed');
+    startBtnLabel.textContent = `Mission Locked — ${selectedTime} MIN`;
+
+    const sessionPayload = {
+      day: todayKey,
+      path: Z9H.get('z9h_active_path', 'calisthenics'),
+      missionId: todaysMission.missionId,
+      title: todaysMission.title,
+      time: selectedTime,
+      tier: selectedTier,
+      // Full contract (sets/rest/prompt per exercise) — this is what Mission Engage
+      // and the Live Workout Console actually need, not just display labels.
+      exercises: currentResolvedMission.resolvedExercises,
+      rewards: currentResolvedMission.rewards,
+      startedAt: Date.now()
+    };
+    Z9H.set('z9h_session', sessionPayload);
+    console.log('Start Mission — handing off to Mission Engage', sessionPayload);
+
+    setTimeout(() => {
+      window.location.href = 'z9h-today-mission.html';
+    }, 550); // brief pause so the green confirmation is actually visible before navigating
+  });
+
+  render();
+</script>
+</body>
+</html>

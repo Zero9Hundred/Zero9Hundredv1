@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Z9H — Mission Engage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050608;
+    --surface:#0D0F14;
+    --surface-alt:#12151B;
+    --border:#202530;
+    --platinum:#C6CED4;
+    --signal:#4E89FF;
+    --text:#F1F3F7;
+    --text-dim:#8A9199;
+    --text-faint:#54595E;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; height:100%; overflow:hidden;}
+  body{ display:flex; justify-content:center; }
+  .app{ width:100%; max-width:430px; height:100vh; position:relative; display:flex; flex-direction:column; }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:18px 18px 0 18px; }
+  .close-btn{ width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition:opacity 0.2s ease; }
+  .close-btn:active{ opacity:0.7; }
+  .close-btn svg{ width:15px; height:15px; stroke:var(--text-dim); }
+  .path-tag{ display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; background:var(--surface); border:1px solid var(--border); font-family:'Inter'; font-weight:600; font-size:10px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-dim); }
+  .path-dot{ width:5px; height:5px; border-radius:50%; background:var(--signal); }
+  .spacer36{ width:36px; }
+
+  /* ---------- CENTER STAGE ---------- */
+  .stage{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:0 32px; text-align:center; }
+
+  .stage-texture{ position:absolute; top:50%; left:50%; width:340px; height:340px; transform:translate(-50%,-50%); opacity:0.05; pointer-events:none; }
+  .stage-texture svg{ width:100%; height:100%; stroke:var(--signal); fill:none; }
+
+  .mission-eyebrow{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-bottom:10px; position:relative; z-index:1; }
+  .mission-name{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:28px; line-height:1.1; color:var(--text); margin-bottom:8px; position:relative; z-index:1; }
+  .mission-meta{ font-size:12px; letter-spacing:0.5px; color:var(--text-faint); font-weight:600; margin-bottom:56px; position:relative; z-index:1; }
+  .mission-meta span{ color:var(--platinum); }
+
+  .status-text{ font-family:'Oswald',sans-serif; font-weight:500; font-size:14px; letter-spacing:4px; text-transform:uppercase; color:var(--text-dim); margin-bottom:28px; position:relative; z-index:1; min-height:18px; transition:opacity 0.25s ease; }
+
+  .count-ring{ position:relative; width:180px; height:180px; display:flex; align-items:center; justify-content:center; z-index:1; }
+  .count-ring svg.ring{ position:absolute; top:0; left:0; width:180px; height:180px; transform:rotate(-90deg); }
+  .count-ring svg.ring circle{ fill:none; stroke-width:2; }
+  .count-ring svg.ring .track{ stroke:var(--border); }
+  .count-ring svg.ring .progress{ stroke:var(--signal); stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .count-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:76px; line-height:1; color:var(--text); transition:opacity 0.15s ease, transform 0.15s ease; }
+  .count-num.go{ color:var(--signal); font-size:40px; letter-spacing:2px; }
+
+  .corner{ position:absolute; width:16px; height:16px; pointer-events:none; z-index:1; }
+  .corner.tl{ top:0; left:0; border-top:2px solid var(--border); border-left:2px solid var(--border); }
+  .corner.tr{ top:0; right:0; border-top:2px solid var(--border); border-right:2px solid var(--border); }
+  .corner.bl{ bottom:0; left:0; border-bottom:2px solid var(--border); border-left:2px solid var(--border); }
+  .corner.br{ bottom:0; right:0; border-bottom:2px solid var(--border); border-right:2px solid var(--border); }
+  .count-frame{ position:relative; width:212px; height:212px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+
+  /* ---------- FOOTER ---------- */
+  .footer{ padding:0 32px calc(28px + env(safe-area-inset-bottom)) 32px; text-align:center; }
+  .footer-msg{ font-size:11px; letter-spacing:0.5px; color:var(--text-faint); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <button class="close-btn" id="closeBtn" aria-label="Cancel mission"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="path-tag"><span class="path-dot"></span><span id="pathTagLabel">Calisthenics</span></div>
+    <div class="spacer36"></div>
+  </div>
+
+  <div class="stage">
+    <div class="stage-texture" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-width="1"/><circle cx="50" cy="50" r="32" stroke-width="1"/><circle cx="50" cy="50" r="18" stroke-width="1"/></svg>
+    </div>
+
+    <span class="mission-eyebrow" id="eyebrowLabel">Mission Engage</span>
+    <div class="mission-name" id="missionName">Upper Body Push</div>
+    <div class="mission-meta"><span id="missionDuration">15</span> MIN &middot; <span id="missionTier">MODERATE</span></div>
+
+    <div class="status-text" id="statusText">STAND BY&hellip;</div>
+
+    <div class="count-frame">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="count-ring">
+        <svg class="ring" viewBox="0 0 180 180">
+          <circle class="track" cx="90" cy="90" r="84"></circle>
+          <circle class="progress" id="progressRing" cx="90" cy="90" r="84" stroke-dasharray="527" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="count-num" id="countNum">3</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-msg" id="footerMsg">Protecting your 14-day discipline streak.</div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // Z9H CROSS-SCREEN STATE — same helper as Home Console. Duplicated
+  // intentionally so this file stays self-contained for deployment.
+  // ============================================================
+  const Z9H = {
+    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+  };
+
+  // ---- Mission payload — read from the real session Home Console wrote.
+  // Falls back to a demo mission if this file is opened directly (no session
+  // yet), so it still works standalone for testing/review.
+  const session = Z9H.get('z9h_session', null);
+  const mission = session || {
+    missionId: "cali_push_15",
+    path: "calisthenics",
+    title: "Upper Body Push",
+    time: 15,
+    tier: "standard"
+  };
+  if(!session){
+    console.warn('Mission Engage: no session found in storage — using demo fallback data. Start Mission from Home Console to pass real state.');
+  }
+
+  document.getElementById('missionName').textContent = mission.title;
+  document.getElementById('missionDuration').textContent = mission.time || mission.duration || 15;
+  const pathLabel = mission.path ? mission.path.charAt(0).toUpperCase() + mission.path.slice(1) : 'Calisthenics';
+  document.getElementById('pathTagLabel').textContent = pathLabel;
+  document.getElementById('missionTier').textContent = (mission.tier || 'standard').toUpperCase();
+
+  const statusText = document.getElementById('statusText');
+  const countNum = document.getElementById('countNum');
+  const eyebrowLabel = document.getElementById('eyebrowLabel');
+  const footerMsg = document.getElementById('footerMsg');
+  const progressRing = document.getElementById('progressRing');
+  const closeBtn = document.getElementById('closeBtn');
+
+  const RING_CIRCUMFERENCE = 527; // 2 * PI * 84, precomputed to avoid a layout read
+
+  // Cancel returns to Home Console for real.
+  closeBtn.addEventListener('click', () => {
+    console.log('Mission Engage cancelled — returning to Home Console');
+    statusText.textContent = 'MISSION ABORTED';
+    statusText.style.opacity = '0.5';
+    setTimeout(() => {
+      window.location.href = 'z9h-home-screen-v2.html';
+    }, 500);
+  });
+
+  function pulse(el){
+    el.style.transform = 'scale(0.85)';
+    el.style.opacity = '0';
+    requestAnimationFrame(() => {
+      el.style.transform = 'scale(1)';
+      el.style.opacity = '1';
+    });
+  }
+
+  function runSequence(){
+    // Stand by
+    statusText.textContent = 'STAND BY\u2026';
+    countNum.textContent = '3';
+    progressRing.style.transition = 'none';
+    progressRing.style.strokeDashoffset = '0';
+
+    setTimeout(() => {
+      statusText.style.opacity = '0';
+
+      let n = 3;
+      countNum.classList.remove('go');
+
+      const tick = () => {
+        countNum.textContent = n;
+        pulse(countNum);
+        progressRing.style.transition = 'stroke-dashoffset 1s linear';
+        progressRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE * ((3 - n + 1) / 3));
+
+        n -= 1;
+        if(n >= 1){
+          setTimeout(tick, 1000);
+        } else {
+          setTimeout(() => {
+            countNum.textContent = 'GO';
+            countNum.classList.add('go');
+            pulse(countNum);
+            eyebrowLabel.textContent = 'Mission Active';
+            footerMsg.textContent = 'Launching Live Workout Console\u2026';
+
+            console.log('Mission Engage complete — handing off to Live Workout Console', mission);
+            setTimeout(() => {
+              window.location.href = 'z9h-live-workout-console.html';
+            }, 700);
+          }, 1000);
+        }
+      };
+      tick();
+    }, 1400);
+  }
+
+  runSequence();
+</script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Z9H — Live Workout Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050608;
+    --surface:#0D0F14;
+    --surface-alt:#12151B;
+    --border:#202530;
+    --platinum:#C6CED4;
+    --signal:#4E89FF;
+    --text:#F1F3F7;
+    --text-dim:#8A9199;
+    --text-faint:#54595E;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; height:100%; overflow:hidden;}
+  body{ display:flex; justify-content:center; }
+  .app{ width:100%; max-width:430px; height:100vh; position:relative; display:flex; flex-direction:column; }
+
+  /* ---------- TOP BAR + PROGRESS ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px 0 18px; }
+  .icon-btn{ width:34px; height:34px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition:opacity 0.2s ease; }
+  .icon-btn:active{ opacity:0.7; }
+  .icon-btn svg{ width:14px; height:14px; stroke:var(--text-dim); }
+  .exercise-counter{ font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); font-weight:600; }
+  .exercise-counter span{ color:var(--platinum); }
+
+  .progress-track{ margin:14px 18px 0 18px; height:4px; border-radius:3px; background:var(--surface-alt); overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--platinum); border-radius:3px; transition:width 0.4s ease; }
+
+  /* ---------- EXERCISE RAIL ---------- */
+  .exercise-rail{ display:flex; gap:8px; padding:14px 18px 0 18px; overflow-x:auto; scrollbar-width:none; }
+  .exercise-rail::-webkit-scrollbar{ display:none; }
+  .rail-item{ display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; width:58px; }
+  .rail-dot{ width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface-alt); border:1px solid var(--border); }
+  .rail-dot.done{ background:var(--platinum); border-color:var(--platinum); }
+  .rail-dot.done svg{ width:12px; height:12px; stroke:#050608; }
+  .rail-dot.current{ background:var(--surface-alt); border:2px solid var(--signal); }
+  .rail-label{ font-size:8px; letter-spacing:0.3px; color:var(--text-faint); font-weight:600; text-align:center; line-height:1.2; text-transform:uppercase; }
+  .rail-label.current{ color:var(--platinum); }
+
+  /* ---------- CENTER STAGE ---------- */
+  .stage{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:0 32px; text-align:center; min-height:0; }
+
+  .stage-texture{ position:absolute; top:50%; left:50%; width:320px; height:320px; transform:translate(-50%,-50%); opacity:0.05; pointer-events:none; }
+  .stage-texture svg{ width:100%; height:100%; stroke:var(--signal); fill:none; }
+
+  .phase-label{ font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--signal); font-weight:700; margin-bottom:8px; position:relative; z-index:1; }
+  .phase-label.rest{ color:var(--platinum); }
+  .exercise-name{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:26px; line-height:1.1; color:var(--text); margin-bottom:6px; position:relative; z-index:1; }
+  .set-meta{ font-size:12px; letter-spacing:0.5px; color:var(--text-faint); font-weight:600; margin-bottom:28px; position:relative; z-index:1; }
+  .set-meta span{ color:var(--platinum); }
+
+  .count-frame{ position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:22px; z-index:1; }
+  .corner{ position:absolute; width:16px; height:16px; pointer-events:none; }
+  .corner.tl{ top:0; left:0; border-top:2px solid var(--border); border-left:2px solid var(--border); }
+  .corner.tr{ top:0; right:0; border-top:2px solid var(--border); border-right:2px solid var(--border); }
+  .corner.bl{ bottom:0; left:0; border-bottom:2px solid var(--border); border-left:2px solid var(--border); }
+  .corner.br{ bottom:0; right:0; border-bottom:2px solid var(--border); border-right:2px solid var(--border); }
+  .count-ring{ position:relative; width:170px; height:170px; display:flex; align-items:center; justify-content:center; }
+  .count-ring svg.ring{ position:absolute; top:0; left:0; width:170px; height:170px; transform:rotate(-90deg); }
+  .count-ring svg.ring circle{ fill:none; stroke-width:2; }
+  .count-ring svg.ring .track{ stroke:var(--border); }
+  .count-ring svg.ring .progress{ stroke:var(--signal); stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .count-ring.resting svg.ring .progress{ stroke:var(--platinum); }
+  .count-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:56px; line-height:1; color:var(--text); }
+
+  .prompt-text{ font-size:13px; line-height:1.5; color:var(--text-dim); font-style:italic; max-width:280px; margin-bottom:4px; position:relative; z-index:1; min-height:38px; }
+
+  .complete-set-btn{ margin-top:18px; width:100%; max-width:280px; padding:16px; border:none; border-radius:12px; background:var(--signal); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:14px; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; box-shadow:0 8px 24px -8px rgba(78,137,255,0.4); transition:all 0.15s ease; position:relative; z-index:1; }
+  .complete-set-btn:active{ opacity:0.85; transform:scale(0.98); }
+
+  /* ---------- BOTTOM CONTROLS ---------- */
+  .controls{ display:flex; gap:10px; padding:0 20px calc(20px + env(safe-area-inset-bottom)) 20px; }
+  .ctrl-btn{ flex:1; padding:14px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--text-dim); font-family:'Inter'; font-weight:600; font-size:13px; letter-spacing:0.4px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; transition:all 0.15s ease; }
+  .ctrl-btn:active{ opacity:0.7; }
+  .ctrl-btn svg{ width:15px; height:15px; }
+  .ctrl-btn.paused{ background:var(--surface-alt); border-color:var(--signal); color:var(--signal); }
+
+  /* ---------- PAUSE OVERLAY ---------- */
+  .pause-overlay{ position:absolute; inset:0; background:rgba(5,6,8,0.88); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:20; }
+  .pause-overlay.active{ display:flex; }
+  .pause-title{ font-family:'Oswald',sans-serif; font-weight:700; font-size:24px; text-transform:uppercase; letter-spacing:2px; color:var(--platinum); margin-bottom:6px; }
+  .pause-sub{ font-size:12px; color:var(--text-dim); margin-bottom:24px; }
+
+  /* ---------- MISSION COMPLETE STUB ---------- */
+  .complete-overlay{ position:absolute; inset:0; background:var(--bg); display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:0 32px; z-index:30; }
+  .complete-overlay.active{ display:flex; }
+  .complete-title{ font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; text-transform:uppercase; letter-spacing:1px; color:var(--text); margin-bottom:10px; }
+  .complete-sub{ font-size:13px; color:var(--text-dim); max-width:280px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <button class="icon-btn" id="exitBtn" aria-label="Exit workout"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="exercise-counter">Exercise <span id="exNum">1</span> / <span id="exTotal">4</span></div>
+    <div style="width:34px;"></div>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="exercise-rail" id="exerciseRail"></div>
+
+  <div class="stage">
+    <div class="stage-texture" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-width="1"/><circle cx="50" cy="50" r="32" stroke-width="1"/><circle cx="50" cy="50" r="18" stroke-width="1"/></svg>
+    </div>
+
+    <div class="phase-label" id="phaseLabel">WORK</div>
+    <div class="exercise-name" id="exerciseName">Decline Push-Ups</div>
+    <div class="set-meta">SET <span id="setNum">1</span> / <span id="setTotal">4</span></div>
+
+    <div class="count-frame">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="count-ring" id="countRing">
+        <svg class="ring" viewBox="0 0 170 170">
+          <circle class="track" cx="85" cy="85" r="79"></circle>
+          <circle class="progress" id="progressRing" cx="85" cy="85" r="79" stroke-dasharray="496" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="count-num" id="countNum">12</div>
+      </div>
+    </div>
+
+    <div class="prompt-text" id="promptText">Lock out fully at the apex of every single rep.</div>
+
+    <button class="complete-set-btn" id="completeSetBtn" style="display:none;">Complete Set</button>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="pauseBtn"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><span id="pauseLabel">Pause</span></button>
+    <button class="ctrl-btn" id="skipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z"/><path d="M19 5v14"/></svg>Skip</button>
+  </div>
+
+  <div class="pause-overlay" id="pauseOverlay">
+    <div class="pause-title">Paused</div>
+    <div class="pause-sub">Mission holds until you're ready.</div>
+    <button class="ctrl-btn paused" id="resumeBtn" style="max-width:180px; flex:none;">Resume</button>
+  </div>
+
+  <div class="complete-overlay" id="completeOverlay">
+    <div class="complete-title">Mission Complete</div>
+    <div class="complete-sub" id="completeSub">Handing off to Mission Debrief&hellip;</div>
+    <button class="ctrl-btn" id="returnHomeBtn" style="max-width:220px; flex:none; margin-top:24px; background:var(--surface); border-color:var(--platinum); color:var(--platinum);">Return Home</button>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // Z9H CROSS-SCREEN STATE — same helper as Home Console / Mission Engage.
+  // Duplicated intentionally so this file stays self-contained.
+  // ============================================================
+  const Z9H = {
+    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+  };
+
+  // ---- Mission — read from the real session Home Console resolved and wrote.
+  // Falls back to the original demo dataset if this file is opened directly
+  // (no session yet), so it still works standalone for testing/review.
+  const session = Z9H.get('z9h_session', null);
+  const mission = session ? {
+    id: session.missionId,
+    path: session.path,
+    title: session.title,
+    duration: session.time,
+    tier: session.tier,
+    rewards: session.rewards || { xp: 0, streakMessage: 'Mission complete.' },
+    exercises: session.exercises
+  } : {
+    id: "cali_push_15",
+    path: "calisthenics",
+    title: "Upper Body Push",
+    duration: 15,
+    intensity: "MODERATE",
+    rewards: { xp: 150, streakMessage: "Streak Maintained. +1 Day Secure." },
+    exercises: [
+      { id:"ex_p15_1", name:"Decline Push-Ups", type:"reps", sets:4, repsPerSet:12, intraSetRest:30, interExerciseRest:45, prompt:"Lock out fully at the apex of every single rep." },
+      { id:"ex_p15_2", name:"Diamond Push-Ups", type:"reps", sets:3, repsPerSet:10, intraSetRest:30, interExerciseRest:45, prompt:"Keep your center stable. Move symmetrically." },
+      { id:"ex_p15_3", name:"Wide Push-Ups", type:"reps", sets:3, repsPerSet:12, intraSetRest:45, interExerciseRest:60, prompt:"Expand your chest footprint. Engage outer fibers." },
+      { id:"ex_p15_4", name:"Plank Hold", type:"timed", sets:2, durationPerSet:45, intraSetRest:15, interExerciseRest:0, prompt:"Brace core horizontally. Keep your spine flat." }
+    ]
+  };
+  if(!session){
+    console.warn('Live Workout Console: no session found in storage — using demo fallback data. Run the full flow from Home Console to pass real state.');
+  }
+
+  const RING_CIRCUMFERENCE = 496; // 2 * PI * 79
+
+  // ---- Build a flat sequence of blocks from the mission contract ----
+  function buildSequence(exercises){
+    const seq = [];
+    exercises.forEach((ex, exIndex) => {
+      for(let s = 1; s <= ex.sets; s++){
+        seq.push({ phase:'work', exercise:ex, exIndex, setNum:s });
+        const isLastSet = s === ex.sets;
+        if(!isLastSet){
+          seq.push({ phase:'rest', exercise:ex, exIndex, setNum:s, duration: ex.intraSetRest, restKind:'set' });
+        } else if(ex.interExerciseRest > 0){
+          seq.push({ phase:'rest', exercise:ex, exIndex, setNum:s, duration: ex.interExerciseRest, restKind:'exercise' });
+        }
+      }
+    });
+    return seq;
+  }
+
+  const sequence = buildSequence(mission.exercises);
+  let cursor = 0;
+  let paused = false;
+  let tickHandle = null;
+  let secondsLeft = 0;
+
+  // ---- DOM refs ----
+  const exNum = document.getElementById('exNum');
+  const exTotal = document.getElementById('exTotal');
+  const progressFill = document.getElementById('progressFill');
+  const exerciseRail = document.getElementById('exerciseRail');
+  const phaseLabel = document.getElementById('phaseLabel');
+  const exerciseName = document.getElementById('exerciseName');
+  const setNum = document.getElementById('setNum');
+  const setTotal = document.getElementById('setTotal');
+  const countRing = document.getElementById('countRing');
+  const progressRing = document.getElementById('progressRing');
+  const countNum = document.getElementById('countNum');
+  const promptText = document.getElementById('promptText');
+  const completeSetBtn = document.getElementById('completeSetBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseLabel = document.getElementById('pauseLabel');
+  const skipBtn = document.getElementById('skipBtn');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const exitBtn = document.getElementById('exitBtn');
+  const completeOverlay = document.getElementById('completeOverlay');
+  const completeSub = document.getElementById('completeSub');
+
+  exTotal.textContent = mission.exercises.length;
+
+  // ---- Exercise rail (reuses the Discipline Streak day-dot visual language) ----
+  function renderRail(activeExIndex){
+    exerciseRail.innerHTML = '';
+    mission.exercises.forEach((ex, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'rail-item';
+      const dot = document.createElement('div');
+      const label = document.createElement('div');
+      label.className = 'rail-label';
+      label.textContent = ex.name.split(' ')[0];
+
+      if(i < activeExIndex){
+        dot.className = 'rail-dot done';
+        dot.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      } else if(i === activeExIndex){
+        dot.className = 'rail-dot current';
+        label.classList.add('current');
+      } else {
+        dot.className = 'rail-dot';
+      }
+      wrap.appendChild(dot);
+      wrap.appendChild(label);
+      exerciseRail.appendChild(wrap);
+    });
+  }
+
+  function clearTick(){
+    if(tickHandle){ clearInterval(tickHandle); tickHandle = null; }
+  }
+
+  function setRingProgress(fraction, kind){
+    countRing.classList.toggle('resting', kind === 'rest');
+    progressRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - fraction));
+  }
+
+  function renderBlock(){
+    const block = sequence[cursor];
+    if(!block){
+      showComplete();
+      return;
+    }
+
+    const ex = block.exercise;
+    exNum.textContent = block.exIndex + 1;
+    exerciseName.textContent = ex.name;
+    setNum.textContent = block.setNum;
+    setTotal.textContent = ex.sets;
+    promptText.textContent = ex.prompt;
+    renderRail(block.exIndex);
+
+    const completedFraction = cursor / sequence.length;
+    progressFill.style.width = (completedFraction * 100).toFixed(1) + '%';
+
+    clearTick();
+    setRingProgress(0, block.phase === 'rest' ? 'rest' : 'work');
+
+    if(block.phase === 'rest'){
+      phaseLabel.textContent = block.restKind === 'exercise' ? 'REST · NEXT EXERCISE' : 'REST';
+      phaseLabel.classList.add('rest');
+      completeSetBtn.style.display = 'none';
+      secondsLeft = block.duration;
+      countNum.textContent = secondsLeft;
+      const total = block.duration;
+      tickHandle = setInterval(() => {
+        if(paused) return;
+        secondsLeft -= 1;
+        countNum.textContent = Math.max(secondsLeft, 0);
+        setRingProgress((total - secondsLeft) / total, 'rest');
+        if(secondsLeft <= 0){
+          clearTick();
+          advance();
+        }
+      }, 1000);
+
+    } else if(ex.type === 'timed'){
+      phaseLabel.textContent = 'HOLD';
+      phaseLabel.classList.remove('rest');
+      completeSetBtn.style.display = 'none';
+      secondsLeft = ex.durationPerSet;
+      countNum.textContent = secondsLeft;
+      const total = ex.durationPerSet;
+      tickHandle = setInterval(() => {
+        if(paused) return;
+        secondsLeft -= 1;
+        countNum.textContent = Math.max(secondsLeft, 0);
+        setRingProgress((total - secondsLeft) / total, 'work');
+        if(secondsLeft <= 0){
+          clearTick();
+          advance();
+        }
+      }, 1000);
+
+    } else {
+      // reps-based work — user-paced, stopwatch counts up, manual "Complete Set"
+      phaseLabel.textContent = 'WORK';
+      phaseLabel.classList.remove('rest');
+      countNum.textContent = ex.repsPerSet;
+      setRingProgress(1, 'work');
+      completeSetBtn.style.display = 'block';
+    }
+  }
+
+  function advance(){
+    cursor += 1;
+    renderBlock();
+  }
+
+  completeSetBtn.addEventListener('click', () => {
+    if(paused) return;
+    advance();
+  });
+
+  skipBtn.addEventListener('click', () => {
+    clearTick();
+    advance();
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    paused = true;
+    pauseOverlay.classList.add('active');
+  });
+
+  resumeBtn.addEventListener('click', () => {
+    paused = false;
+    pauseOverlay.classList.remove('active');
+  });
+
+  exitBtn.addEventListener('click', () => {
+    clearTick();
+    console.log('Live Workout Console exited early — returning to Home Console');
+    window.location.href = 'z9h-home-screen-v2.html';
+  });
+
+  const returnHomeBtn = document.getElementById('returnHomeBtn');
+  returnHomeBtn.addEventListener('click', () => {
+    window.location.href = 'z9h-home-screen-v2.html';
+  });
+
+  function showComplete(){
+    clearTick();
+    completeSub.textContent = `${mission.rewards.streakMessage} \u00B7 +${mission.rewards.xp} XP`;
+    completeOverlay.classList.add('active');
+
+    // DEMO-ONLY: bumps a local counter so completing a mission shows *something*
+    // persisting across the session. This is NOT real streak logic — no date
+    // checking, no once-per-day guard, no Supabase write. Real streak tracking
+    // needs the actual backend logic from the live app, not a client-side mock.
+    const demoStreak = Z9H.get('z9h_demo_streak_count', 0) + 1;
+    Z9H.set('z9h_demo_streak_count', demoStreak);
+
+    console.log('Mission complete — no Stage 4 Debrief screen exists yet, returning to Home Console via button', {
+      mission,
+      demoStreakCount: demoStreak
+    });
+  }
+
+  renderBlock();
+</script>
+</body>
+</html>
