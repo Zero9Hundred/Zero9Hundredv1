@@ -97,6 +97,8 @@
 </div>
 
 <script>
+  alert('CHECKPOINT 1: Main script tag has started executing');
+
   // ============================================================
   // ON-PAGE DEBUG LOG — prints execution steps directly onto the screen.
   // Temporary diagnostic aid: lets us see exactly how far the script gets
@@ -146,6 +148,7 @@
 
   let supabase = null;
   let LIBRARY_FAILED_TO_LOAD = false;
+  alert('CHECKPOINT 2: Reached Supabase library check');
   logDebug('typeof window.supabase = ' + typeof window.supabase);
 
   // Same pattern as the original app's proven, working Supabase init:
@@ -207,6 +210,7 @@
     ]);
   }
 
+  alert('CHECKPOINT 3: Reached DOM element grabbing');
   logDebug('Grabbing DOM elements…');
   const signInTab = document.getElementById('signInTab');
   const signUpTab = document.getElementById('signUpTab');
@@ -342,6 +346,8 @@
       submitBtn.textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
     }
   });
+
+  alert('CHECKPOINT 4: Reached the very end of the script — everything ran');
 </script>
 </body>
 </html>
