@@ -2,352 +2,456 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Z9H — Sign In</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="z9h-version" content="2.0.0-auth">
+<title>ZERO9HUNDRED — Access</title>
+
+<!-- Fonts: Oswald (headline) + Inter (body), per Z9H visual system -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
   :root{
     --bg:#050608;
     --surface:#0D0F14;
-    --surface-alt:#12151B;
     --border:#202530;
     --platinum:#C6CED4;
     --signal:#4E89FF;
     --text:#F1F3F7;
-    --text-dim:#8A9199;
-    --text-faint:#54595E;
-    --radius:16px;
     --path-accent:#4E89FF;
+    --danger:#FF5C5C;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
-  body{ display:flex; justify-content:center; min-height:100vh; }
-  .app{ width:100%; max-width:430px; min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:24px 20px calc(24px + env(safe-area-inset-bottom)); }
 
-  .wordmark-block{ text-align:center; margin-bottom:36px; }
-  .wordmark{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
-  .wordmark .accent-blue{ color:var(--signal); }
-  .wordmark-tagline{ margin-top:8px; font-family:'Oswald',sans-serif; font-weight:500; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--platinum); }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 
-  .mode-toggle{ display:flex; justify-content:center; gap:6px; margin-bottom:24px; }
-  .mode-btn{ background:none; border:none; font-family:'Inter'; font-size:12px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-faint); cursor:pointer; padding:4px 8px; }
-  .mode-btn.active{ color:var(--platinum); border-bottom:2px solid var(--path-accent); }
-  .mode-sep{ color:var(--text-faint); font-size:12px; }
+  html,body{
+    height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
 
-  .form-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px 20px; }
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  /* Radar texture — faint concentric rings, instrument-panel language */
+  body::before{
+    content:"";
+    position:fixed;
+    top:50%; left:50%;
+    width:1400px; height:1400px;
+    transform:translate(-50%,-50%);
+    background:
+      repeating-radial-gradient(circle at center,
+        rgba(78,137,255,0.05) 0px,
+        rgba(78,137,255,0.05) 1px,
+        transparent 1px,
+        transparent 90px);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* Z9H monogram watermark */
+  body::after{
+    content:"Z9H";
+    position:fixed;
+    bottom:-4vw;
+    right:-2vw;
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:32vw;
+    line-height:1;
+    color:rgba(198,206,212,0.025);
+    letter-spacing:-0.02em;
+    pointer-events:none;
+    z-index:0;
+    user-select:none;
+  }
+
+  .panel{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:400px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    padding:36px 28px 28px;
+  }
+
+  /* Corner brackets */
+  .panel::before,
+  .panel::after,
+  .brackets span::before,
+  .brackets span::after{
+    content:"";
+    position:absolute;
+    width:16px; height:16px;
+    border:2px solid var(--path-accent);
+    opacity:0.8;
+    pointer-events:none;
+  }
+  .panel::before{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+  .panel::after{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+  .brackets span::before{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+  .brackets span::after{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+  .brackets{ position:absolute; inset:0; pointer-events:none; }
+
+  .wordmark{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:clamp(24px, 8vw, 30px);
+    letter-spacing:0.02em;
+    text-align:center;
+    text-transform:uppercase;
+  }
+  .wordmark .nine{ color:var(--path-accent); }
+
+  .tagline{
+    text-align:center;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--platinum);
+    text-transform:uppercase;
+    margin-top:6px;
+    opacity:0.7;
+  }
+
+  .theme-engine-trigger{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+
+  .tabs{
+    display:flex;
+    margin-top:28px;
+    border:1px solid var(--border);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:11px 0;
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--platinum);
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    display:block;
+  }
+
+  #tab-signin:checked ~ .panel label[for="tab-signin"],
+  #tab-signup:checked ~ .panel label[for="tab-signup"]{
+    color:var(--bg);
+    background:var(--path-accent);
+  }
+
+  form{ margin-top:24px; display:none; }
+  #tab-signin:checked ~ .panel #form-signin{ display:block; }
+  #tab-signup:checked ~ .panel #form-signup{ display:block; }
+
   .field{ margin-bottom:16px; }
-  .field label{ display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-bottom:8px; }
-  .field input{ width:100%; padding:14px; border-radius:10px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text); font-family:'Inter'; font-size:15px; }
-  .field input:focus{ outline:none; border-color:var(--path-accent); }
-  .field input::placeholder{ color:var(--text-faint); }
+  .field label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--platinum);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    padding:12px 12px;
+    outline:none;
+  }
+  .field input:focus{ border-color:var(--path-accent); }
 
-  .submit-btn{ width:100%; padding:17px; border:none; border-radius:12px; background:var(--path-accent); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:15px; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; margin-top:6px; transition:all 0.15s ease; box-shadow:0 8px 24px -8px rgba(78,137,255,0.4); }
-  .submit-btn:active{ opacity:0.85; transform:scale(0.98); }
-  .submit-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .submit-btn{
+    width:100%;
+    margin-top:8px;
+    padding:14px 0;
+    background:var(--path-accent);
+    color:var(--bg);
+    border:none;
+    font-family:'Oswald',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .submit-btn:disabled{ opacity:0.5; cursor:default; }
 
-  .status-msg{ text-align:center; font-size:12.5px; margin-top:16px; min-height:16px; color:var(--text-dim); }
-  .status-msg.error{ color:#e2604f; }
-  .status-msg.success{ color:#2fbf71; }
+  .status{
+    margin-top:14px;
+    font-size:13px;
+    text-align:center;
+    line-height:1.5;
+    min-height:18px;
+  }
+  .status.error{ color:var(--danger); }
+  .status.info{ color:var(--platinum); }
+  .status.success{ color:var(--path-accent); }
 
-  .fine-print{ text-align:center; font-size:11px; color:var(--text-faint); margin-top:24px; line-height:1.5; }
+  .footnote{
+    margin-top:20px;
+    text-align:center;
+    font-size:10px;
+    letter-spacing:0.08em;
+    color:var(--platinum);
+    opacity:0.4;
+    text-transform:uppercase;
+  }
 </style>
 </head>
 <body>
-<div id="diagCheck" style="text-align:center; font-size:11px; color:#e2604f; padding:6px; font-family:monospace;">⚠ JS not running yet…</div>
-<script>document.getElementById('diagCheck').textContent = '✓ JS is running — page loaded OK';</script>
-<div id="debugLog" style="background:#000; border:1px solid #333; margin:6px; padding:8px; font-family:monospace; font-size:10px; color:#7fdc7f; max-height:180px; overflow-y:auto; white-space:pre-wrap; line-height:1.5;">Waiting for main script…</div>
 
-<div class="app">
+<input type="radio" name="auth-tab" id="tab-signin" class="theme-engine-trigger" checked>
+<input type="radio" name="auth-tab" id="tab-signup" class="theme-engine-trigger">
 
-  <div class="wordmark-block">
-    <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
-    <div class="wordmark-tagline">DISCIPLINE. FOCUS. STRENGTH.</div>
+<div class="panel">
+  <div class="brackets"><span></span></div>
+
+  <div class="wordmark">ZERO<span class="nine">9</span>HUNDRED</div>
+  <div class="tagline">Discipline &bull; Focus &bull; Strength</div>
+
+  <div class="tabs">
+    <label class="tab" for="tab-signin">Sign In</label>
+    <label class="tab" for="tab-signup">Create Account</label>
   </div>
 
-  <div class="mode-toggle">
-    <button class="mode-btn active" id="signInTab" type="button">Sign In</button>
-    <span class="mode-sep">/</span>
-    <button class="mode-btn" id="signUpTab" type="button">Create Account</button>
-  </div>
+  <!-- SIGN IN -->
+  <form id="form-signin">
+    <div class="field">
+      <label for="signin-email">Email</label>
+      <input id="signin-email" type="email" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="signin-password">Password</label>
+      <input id="signin-password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="submit-btn" id="signin-btn" type="submit">Enter Mission Control</button>
+  </form>
 
-  <div class="form-card">
-    <form id="authForm">
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
-      </div>
-      <button class="submit-btn" id="submitBtn" type="submit">Sign In</button>
-    </form>
-    <div class="status-msg" id="statusMsg"></div>
-  </div>
+  <!-- CREATE ACCOUNT -->
+  <form id="form-signup">
+    <div class="field">
+      <label for="signup-name">Display Name</label>
+      <input id="signup-name" type="text" autocomplete="nickname" required>
+    </div>
+    <div class="field">
+      <label for="signup-email">Email</label>
+      <input id="signup-email" type="email" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="signup-password">Password</label>
+      <input id="signup-password" type="password" autocomplete="new-password" minlength="6" required>
+    </div>
+    <div class="field">
+      <label for="signup-confirm">Confirm Password</label>
+      <input id="signup-confirm" type="password" autocomplete="new-password" minlength="6" required>
+    </div>
+    <button class="submit-btn" id="signup-btn" type="submit">Deploy Account</button>
+  </form>
 
-  <div class="fine-print" id="finePrint">
-    Real Supabase auth — needs your project URL and anon key filled in below before this will connect to anything.
-  </div>
-
+  <div class="status" id="status"></div>
+  <div class="footnote">Z9H Access Terminal</div>
 </div>
 
-<script>
-  alert('CHECKPOINT 1: Main script tag has started executing');
+<!-- ============================================================
+     SUPABASE CLIENT
+     Loaded first, deferred, with no code below assuming it succeeded
+     until we've explicitly checked. This is the exact failure mode
+     that broke the Cloudflare deploy: the CDN tag silently blocked
+     the main script block. Everything here is defensive by design.
+============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
-  // ============================================================
-  // ON-PAGE DEBUG LOG — prints execution steps directly onto the screen.
-  // Temporary diagnostic aid: lets us see exactly how far the script gets
-  // on a real device without needing browser dev tools (not available on
-  // mobile Safari without a connected Mac). Remove once the real bug is found.
-  // ============================================================
-  const debugLogEl = document.getElementById('debugLog');
-  let debugLines = [];
-  function logDebug(msg, isError) {
-    debugLines.push((isError ? '✗ ' : '• ') + msg);
-    if (debugLogEl) debugLogEl.textContent = debugLines.join('\n');
-    if (isError) console.error(msg); else console.log(msg);
-  }
-  logDebug('Main script block started');
+<script defer>
+(function () {
+  var Z9H_VERSION = '2.0.0-auth';
 
-  // SUPABASE CONFIG — REPLACE THESE TWO VALUES.
-  // Find them in your Supabase dashboard: Project Settings > API.
-  // The anon/public key is safe to expose client-side — it's not a secret,
-  // access control is enforced by your Row Level Security policies, not by
-  // hiding this key.
-  // ============================================================
-  const SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+  // ----------------------------------------------------------
+  // CONFIG — fill these in from Supabase Dashboard > Settings > API
+  // Project: kfftrdsrzqjjvfdsrgzf (Z9H v2, isolated project)
+  // Use the anon/public key only. Never the service_role key.
+  // ----------------------------------------------------------
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
 
-  const CONFIG_MISSING = SUPABASE_URL.startsWith('YOUR_') || SUPABASE_ANON_KEY.startsWith('YOUR_');
-  logDebug('CONFIG_MISSING = ' + CONFIG_MISSING);
+  // Where a successful sign-in / sign-up sends the user.
+  var REDIRECT_URL = 'z9h-home-screen-v2.html';
 
-  // Surface any uncaught error visibly rather than letting it silently vanish
-  // into the console — this is what would have shown the real cause of the
-  // "Script error" instead of a generic browser message.
-  window.addEventListener('error', (event) => {
-    const msg = document.getElementById('statusMsg');
-    if (msg) {
-      msg.textContent = 'Unexpected error: ' + (event.message || 'unknown — check browser console for details');
-      msg.classList.add('error');
-    }
-    console.error('Uncaught error:', event.error || event.message, event.filename, event.lineno);
-  });
-  window.addEventListener('unhandledrejection', (event) => {
-    const msg = document.getElementById('statusMsg');
-    if (msg) {
-      msg.textContent = 'Unexpected error: ' + (event.reason?.message || String(event.reason));
-      msg.classList.add('error');
-    }
-    console.error('Unhandled promise rejection:', event.reason);
-  });
+  var statusEl, formSignin, formSignup, signinBtn, signupBtn;
 
-  let supabase = null;
-  let LIBRARY_FAILED_TO_LOAD = false;
-  alert('CHECKPOINT 2: Reached Supabase library check');
-  logDebug('typeof window.supabase = ' + typeof window.supabase);
-
-  // Same pattern as the original app's proven, working Supabase init:
-  // the CDN script can still be finishing execution when this line runs,
-  // especially on slower connections — a single synchronous check isn't
-  // reliable, so retry every 500ms for up to 5 seconds before giving up.
-  function initSupabaseClient() {
-    if (typeof window.supabase === 'undefined') return false;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      logDebug('createClient() succeeded, supabase client ready');
-      return true;
-    } catch (initErr) {
-      logDebug('createClient() THREW: ' + initErr.message, true);
-      return false;
-    }
+  function setStatus(msg, type) {
+    if (!statusEl) return;
+    statusEl.textContent = msg || '';
+    statusEl.className = 'status' + (type ? ' ' + type : '');
   }
 
-  if (!CONFIG_MISSING) {
-    if (!initSupabaseClient()) {
-      LIBRARY_FAILED_TO_LOAD = true;
-      logDebug('Supabase not ready yet — retrying every 500ms (up to 10x)…', true);
-      let retries = 0;
-      const retryInterval = setInterval(() => {
-        retries++;
-        if (initSupabaseClient()) {
-          clearInterval(retryInterval);
-          LIBRARY_FAILED_TO_LOAD = false;
-          logDebug('Supabase became ready after ' + retries + ' retr' + (retries === 1 ? 'y' : 'ies'));
-          if (submitBtn) submitBtn.disabled = false;
-          if (finePrint) finePrint.textContent = 'Signing in connects to your real Supabase project.';
-          if (statusMsg) { statusMsg.textContent = ''; statusMsg.className = 'status-msg'; }
-        } else if (retries >= 10) {
-          clearInterval(retryInterval);
-          logDebug('Gave up after 10 retries — Supabase library never loaded', true);
-          if (statusMsg) {
-            statusMsg.textContent = 'Could not connect — check your internet connection and reload the page.';
-            statusMsg.classList.add('error');
-          }
-        }
-      }, 500);
-    }
-  }
-
-  // ============================================================
-  // Z9H CROSS-SCREEN STATE — same helper as every other screen.
-  // ============================================================
-  const Z9H = {
-    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
-    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
-  };
-
-  // Wraps any DB/auth call with a timeout, per the project's standing rule —
-  // prevents a hung network request from leaving the UI stuck forever.
+  // Every DB/auth call gets wrapped — a hung network request should
+  // never leave the UI stuck on "Signing in..." forever.
   function withTimeout(promise, ms) {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms))
-    ]);
-  }
-
-  alert('CHECKPOINT 3: Reached DOM element grabbing');
-  logDebug('Grabbing DOM elements…');
-  const signInTab = document.getElementById('signInTab');
-  const signUpTab = document.getElementById('signUpTab');
-  const authForm = document.getElementById('authForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const statusMsg = document.getElementById('statusMsg');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const finePrint = document.getElementById('finePrint');
-  logDebug('signInTab found: ' + !!signInTab + ' | signUpTab found: ' + !!signUpTab);
-
-  let mode = 'signin'; // 'signin' | 'signup'
-
-  if (CONFIG_MISSING) {
-    statusMsg.textContent = 'Supabase not configured yet — fill in SUPABASE_URL and SUPABASE_ANON_KEY at the top of this file.';
-    statusMsg.classList.add('error');
-    submitBtn.disabled = true;
-  } else if (LIBRARY_FAILED_TO_LOAD) {
-    statusMsg.textContent = 'Connecting… (retrying, this can take a few seconds on a slow connection)';
-    submitBtn.disabled = true;
-  } else {
-    finePrint.textContent = 'Signing in connects to your real Supabase project.';
-  }
-
-  function setMode(newMode) {
-    mode = newMode;
-    const isSignIn = mode === 'signin';
-    signInTab.classList.toggle('active', isSignIn);
-    signUpTab.classList.toggle('active', !isSignIn);
-    submitBtn.textContent = isSignIn ? 'Sign In' : 'Create Account';
-    passwordInput.autocomplete = isSignIn ? 'current-password' : 'new-password';
-    statusMsg.textContent = '';
-    statusMsg.className = 'status-msg';
-  }
-
-  try {
-    signInTab.addEventListener('click', () => setMode('signin'));
-    signUpTab.addEventListener('click', () => setMode('signup'));
-    logDebug('Tab click listeners attached OK — tabs should switch now');
-  } catch (tabErr) {
-    logDebug('Attaching tab listeners THREW: ' + tabErr.message, true);
-  }
-
-  // ---- Fast path for returning users: check for an existing session before
-  // making them log in again. getSession() reads local storage first — it's
-  // cheap and doesn't hit the network the way getUser() does.
-  async function checkExistingSession() {
-    if (!supabase) return;
-    try {
-      const { data, error } = await withTimeout(supabase.auth.getSession(), 10000);
-      if (error) { console.warn('getSession error:', error.message); return; }
-      if (data?.session) {
-        console.log('Existing session found — redirecting to Home Console', data.session.user?.email);
-        window.location.href = 'z9h-home-screen-v2.html';
-      }
-    } catch (e) {
-      console.warn('checkExistingSession failed:', e.message);
-    }
-  }
-  checkExistingSession();
-
-  // ---- Listen for future auth state changes. TOKEN_REFRESHED is suppressed
-  // per the project's standing rule — it fires constantly and isn't a real
-  // sign-in/sign-out event, so acting on it causes unwanted re-renders/redirects.
-  if (supabase) {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'TOKEN_REFRESHED') return;
-      console.log('Auth state changed:', event);
+    ms = ms || 10000;
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () {
+        reject(new Error('Request timed out. Check your connection and try again.'));
+      }, ms);
+      promise.then(
+        function (val) { clearTimeout(timer); resolve(val); },
+        function (err) { clearTimeout(timer); reject(err); }
+      );
     });
   }
 
-  authForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!supabase) return;
+  function setLoading(btn, isLoading, idleLabel, loadingLabel) {
+    btn.disabled = isLoading;
+    btn.textContent = isLoading ? loadingLabel : idleLabel;
+  }
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
+  function init() {
+    statusEl = document.getElementById('status');
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = mode === 'signin' ? 'Signing In…' : 'Creating Account…';
-    statusMsg.textContent = '';
-    statusMsg.className = 'status-msg';
+    // Tab switching is now pure CSS (radio + label checkbox-hack pattern,
+    // matching the Pathways screen). It needs zero JavaScript to work,
+    // so it can never be broken by a script or network failure again.
+    formSignin = document.getElementById('form-signin');
+    formSignup = document.getElementById('form-signup');
+    signinBtn = document.getElementById('signin-btn');
+    signupBtn = document.getElementById('signup-btn');
 
-    try {
-      const authCall = mode === 'signin'
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password });
-
-      const { data, error } = await withTimeout(authCall, 10000);
-
-      if (error) {
-        statusMsg.textContent = error.message;
-        statusMsg.classList.add('error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
-        return;
-      }
-
-      if (mode === 'signup' && !data.session) {
-        // Email confirmation required — Supabase's default flow.
-        statusMsg.textContent = 'Account created — check your email to confirm before signing in.';
-        statusMsg.classList.add('success');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-        return;
-      }
-
-      // ------------------------------------------------------------
-      // IMPORTANT GAP: this confirms auth worked and gets a real user ID
-      // (data.user.id / data.session.user.id). It does NOT yet read or write
-      // any streak/mission-progress data — no table/schema for that exists
-      // in this codebase. The demo streak counter elsewhere in the app is
-      // still just a sessionStorage number, completely disconnected from
-      // this login. Wiring real per-user streak persistence is a separate
-      // task: it needs either the original app's existing streak schema
-      // reconnected, or new tables designed for this session's mission model.
-      // ------------------------------------------------------------
-      console.log('Signed in successfully', { userId: data.user?.id, email: data.user?.email });
-
-      statusMsg.textContent = 'Success — redirecting…';
-      statusMsg.classList.add('success');
-
-      setTimeout(() => {
-        window.location.href = 'z9h-home-screen-v2.html';
-      }, 600);
-
-    } catch (err) {
-      statusMsg.textContent = err.message === 'Request timed out'
-        ? 'Request timed out — check your connection and try again.'
-        : 'Something went wrong. Please try again.';
-      statusMsg.classList.add('error');
-      submitBtn.disabled = false;
-      submitBtn.textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+    // ---- Now attempt to bring up the auth client. If this fails,
+    // the tabs above still work — only actual sign-in/sign-up is disabled. ----
+    if (typeof window.supabase === 'undefined') {
+      setStatus('Could not load the auth library. Refresh the page — if this keeps happening, the Supabase CDN script may be blocked.', 'error');
+      signinBtn.disabled = true;
+      signupBtn.disabled = true;
+      return;
     }
-  });
 
-  alert('CHECKPOINT 4: Reached the very end of the script — everything ran');
+    var client;
+    try {
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (err) {
+      setStatus('Failed to initialise the auth client: ' + err.message, 'error');
+      signinBtn.disabled = true;
+      signupBtn.disabled = true;
+      return;
+    }
+
+    // Per Z9H governance: TOKEN_REFRESHED events must be suppressed —
+    // they fire routinely and are not something the UI should react to.
+    try {
+      client.auth.onAuthStateChange(function (event) {
+        if (event === 'TOKEN_REFRESHED') return;
+        if (event === 'SIGNED_IN') {
+          // no-op here; explicit redirect happens in the submit handlers
+        }
+      });
+    } catch (err) {
+      // Non-fatal — auth state listener failing shouldn't block the form.
+      console.warn('Auth state listener failed to attach:', err);
+    }
+
+    // ---- Sign in ----
+    formSignin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('signin-email').value.trim();
+      var password = document.getElementById('signin-password').value;
+
+      if (!email || !password) {
+        setStatus('Enter your email and password.', 'error');
+        return;
+      }
+
+      setStatus('');
+      setLoading(signinBtn, true, 'Enter Mission Control', 'Signing In\u2026');
+
+      withTimeout(client.auth.signInWithPassword({ email: email, password: password }))
+        .then(function (result) {
+          if (result.error) throw result.error;
+          setStatus('Access granted. Redirecting\u2026', 'success');
+          window.location.href = REDIRECT_URL;
+        })
+        .catch(function (err) {
+          setStatus(err.message || 'Sign in failed. Check your details and try again.', 'error');
+        })
+        .finally(function () {
+          setLoading(signinBtn, false, 'Enter Mission Control', 'Signing In\u2026');
+        });
+    });
+
+    // ---- Create account ----
+    formSignup.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = document.getElementById('signup-name').value.trim();
+      var email = document.getElementById('signup-email').value.trim();
+      var password = document.getElementById('signup-password').value;
+      var confirm = document.getElementById('signup-confirm').value;
+
+      if (!name || !email || !password || !confirm) {
+        setStatus('Fill in every field to create an account.', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        setStatus('Password must be at least 6 characters.', 'error');
+        return;
+      }
+      if (password !== confirm) {
+        setStatus('Passwords do not match.', 'error');
+        return;
+      }
+
+      setStatus('');
+      setLoading(signupBtn, true, 'Deploy Account', 'Creating Account\u2026');
+
+      withTimeout(client.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { display_name: name } }
+      }))
+        .then(function (result) {
+          if (result.error) throw result.error;
+
+          // If email confirmation is enabled in Supabase Auth settings,
+          // there will be no active session yet — tell the user to check
+          // their inbox instead of trying to redirect.
+          if (result.data && result.data.session) {
+            setStatus('Account created. Redirecting\u2026', 'success');
+            window.location.href = REDIRECT_URL;
+          } else {
+            setStatus('Account created. Check your email to confirm before signing in.', 'success');
+          }
+        })
+        .catch(function (err) {
+          setStatus(err.message || 'Account creation failed. Try again.', 'error');
+        })
+        .finally(function () {
+          setLoading(signupBtn, false, 'Deploy Account', 'Creating Account\u2026');
+        });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 </script>
+
 </body>
 </html>
