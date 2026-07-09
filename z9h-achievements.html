@@ -189,7 +189,15 @@
     });
   }
 
-  function dateKey(d){ return d.toISOString().slice(0, 10); }
+  // Uses LOCAL calendar date components — not toISOString(), which converts
+  // to UTC first and can silently roll the date back or forward a day for
+  // anyone not in UTC+0 (e.g. BST).
+  function dateKey(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
 
   function loadStreakAndWeek() {
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

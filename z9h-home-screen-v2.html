@@ -287,6 +287,87 @@
 })();
 </script>
 
+<!-- ============================================================
+     TODAY'S MISSION STATUS — separate small script, matching the
+     modular one-job-per-script pattern used across this file. Checks
+     whether today's mission is already logged in mission_completions
+     and, if so, swaps Start Mission into a persistent completed state
+     instead of leaving it looking untouched on revisit.
+============================================================ -->
+<script defer>
+(function () {
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+
+  function withTimeout(promise, ms) {
+    ms = ms || 10000;
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(new Error('timeout')); }, ms);
+      promise.then(
+        function (val) { clearTimeout(timer); resolve(val); },
+        function (err) { clearTimeout(timer); reject(err); }
+      );
+    });
+  }
+
+  // Uses LOCAL calendar date components — not toISOString(), which converts
+  // to UTC first and can silently roll the date back or forward a day for
+  // anyone not in UTC+0 (e.g. BST). Must match the same logic used on
+  // Today's Mission, Achievements, and the Calendar, or "today" can
+  // disagree between screens.
+  function dateKey(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function markStartBtnComplete() {
+    var btn = document.getElementById('startBtn');
+    var label = document.getElementById('startBtnLabel');
+    if (!btn || !label) return;
+    btn.classList.add('confirmed');
+    btn.disabled = true;
+    label.textContent = 'Mission Complete';
+  }
+
+  function checkTodayStatus(retries) {
+    retries = retries || 0;
+    if (typeof window.supabase === 'undefined') {
+      if (retries < 10) setTimeout(function () { checkTodayStatus(retries + 1); }, 500);
+      return;
+    }
+
+    var client;
+    try {
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (err) {
+      console.warn('Could not check today\'s status:', err.message);
+      return;
+    }
+
+    withTimeout(client.auth.getSession())
+      .then(function (result) {
+        if (result.error) throw result.error;
+        var user = result.data && result.data.session && result.data.session.user;
+        if (!user) return null;
+        return withTimeout(client.from('mission_completions').select('id')
+          .eq('user_id', user.id)
+          .eq('completed_date', dateKey(new Date()))
+          .maybeSingle());
+      })
+      .then(function (result) {
+        if (result && result.data) markStartBtnComplete();
+      })
+      .catch(function (err) {
+        console.warn('Could not check today\'s completion status:', err.message);
+      });
+  }
+
+  checkTodayStatus();
+})();
+</script>
+
 <div class="app">
 
   <header>
