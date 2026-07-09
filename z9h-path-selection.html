@@ -208,6 +208,25 @@
     set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
   };
 
+  // ============================================================
+  // PATH ACCENT COLOUR MAP — the single source of truth for the
+  // Adaptive Theme Layer. Calisthenics stays the locked default blue;
+  // every other path carries its own colour downstream from here.
+  // ============================================================
+  const PATH_COLORS = {
+    calisthenics: '#4E89FF',
+    running:      '#FF8A00',
+    strength:     '#FF3B30',
+    movement:     '#CCFF00',
+    breathwork:   '#00E5FF',
+    mind:         '#AF52DE'
+  };
+  const DEFAULT_ACCENT = PATH_COLORS.calisthenics;
+
+  function setAccent(hex){
+    document.documentElement.style.setProperty('--path-accent', hex);
+  }
+
   // Default state: no card selected on load, regardless of the currently
   // active path. Selection here is purely a staging step before Proceed.
   const cards = document.querySelectorAll('.path-card');
@@ -222,17 +241,22 @@
 
       if (!alreadySelected) {
         card.classList.add('selected');
+        const chosen = card.getAttribute('data-path');
+        setAccent(PATH_COLORS[chosen] || DEFAULT_ACCENT); // live preview
+      } else {
+        setAccent(DEFAULT_ACCENT); // deselected — back to default state
       }
-      // If it was already selected, tapping again just deselects (default state).
     });
 
-    // Tapping Proceed commits the path and navigates.
+    // Tapping Proceed commits the path and colour, then navigates.
     const proceedBtn = card.querySelector('.proceed-btn');
     proceedBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const chosen = card.getAttribute('data-path');
+      const accent = PATH_COLORS[chosen] || DEFAULT_ACCENT;
       Z9H.set('z9h_active_path', chosen);
-      console.log('Path confirmed via Proceed — returning to Home Console with:', chosen);
+      Z9H.set('z9h_path_accent', accent);
+      console.log('Path confirmed via Proceed — returning to Home Console with:', chosen, accent);
       window.location.href = 'z9h-home-screen-v2.html';
     });
   });
