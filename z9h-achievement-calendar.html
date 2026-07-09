@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Z9H — Training Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050608;
+    --surface:#0D0F14;
+    --surface-alt:#12151B;
+    --border:#202530;
+    --platinum:#C6CED4;
+    --signal:#4E89FF;
+    --text:#F1F3F7;
+    --text-dim:#8A9199;
+    --text-faint:#54595E;
+    --radius:16px;
+    --path-accent:#4E89FF;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{ display:flex; justify-content:center; min-height:100vh; }
+  .app{ width:100%; max-width:430px; min-height:100vh; position:relative; padding-bottom:40px; }
+
+  /* ---------- HEADER ---------- */
+  header{ display:grid; grid-template-columns:32px 1fr 32px; align-items:center; column-gap:6px; padding:12px 16px 0 16px; }
+  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--path-accent); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:opacity 0.2s ease; }
+  .back-btn:active{ opacity:0.7; }
+  .back-btn svg{ width:15px; height:15px; stroke:var(--path-accent); }
+  .logout-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 8px rgba(78,137,255,0.35); flex-shrink:0; transition:opacity 0.2s ease; }
+  .logout-btn:active{ opacity:0.7; }
+  .logout-btn svg{ width:15px; height:15px; stroke:var(--signal); }
+  .wordmark{ text-align:center; overflow:hidden; font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(26px, 8.5vw, 34px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
+  .wordmark .accent-blue{ color:var(--path-accent); }
+  .page-eyebrow{ text-align:center; font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--path-accent); font-weight:700; margin:10px 0 18px 0; display:block; }
+
+  .section{ padding:0 20px; margin-bottom:16px; }
+
+  /* ---------- STATS ROW ---------- */
+  .stats-row{ display:flex; gap:8px; }
+  .stat-card{ flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 8px; text-align:center; }
+  .stat-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:var(--path-accent); line-height:1; }
+  .stat-label{ font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-top:5px; }
+
+  /* ---------- MONTH NAV ---------- */
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .month-arrow{ width:34px; height:34px; border-radius:10px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition:opacity 0.15s ease; }
+  .month-arrow svg{ width:15px; height:15px; stroke:var(--platinum); }
+  .month-arrow:disabled{ opacity:0.25; cursor:default; }
+  .month-arrow:active:not(:disabled){ opacity:0.7; }
+  .month-label{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:16px; letter-spacing:0.3px; color:var(--text); }
+
+  /* ---------- CALENDAR GRID ---------- */
+  .weekday-row{ display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin-bottom:8px; }
+  .weekday-label{ text-align:center; font-size:10px; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; text-transform:uppercase; }
+  .day-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+  .cal-cell{ aspect-ratio:1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; border:none; padding:0; }
+  .cal-cell.empty{ visibility:hidden; }
+  .cal-cell.pending{
+    background:var(--surface); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; transition:all 0.15s ease;
+  }
+  .cal-cell.pending:active{ opacity:0.7; }
+  .cal-cell.today.pending{ border-color:var(--path-accent); color:var(--path-accent); box-shadow:0 0 8px -2px color-mix(in srgb, var(--path-accent) 60%, transparent); }
+  .cal-cell.done{
+    background:var(--path-accent); border:1px solid var(--path-accent); color:var(--bg); cursor:pointer;
+    box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 70%, transparent); transition:opacity 0.15s ease;
+  }
+  .cal-cell.done:active{ opacity:0.75; }
+  .cal-cell.future{ background:var(--surface-alt); border:1px solid var(--border); color:var(--text-faint); opacity:0.4; cursor:not-allowed; }
+
+  /* ---------- LEGEND ---------- */
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; padding:14px 16px; background:var(--surface-alt); border:1px solid var(--border); border-radius:12px; }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-dim); }
+  .legend-swatch{ width:14px; height:14px; border-radius:4px; flex-shrink:0; }
+  .legend-swatch.done{ background:var(--path-accent); }
+  .legend-swatch.today{ background:transparent; border:1.5px solid var(--path-accent); }
+  .legend-swatch.future{ background:var(--surface-alt); border:1px solid var(--border); opacity:0.5; }
+
+  .hint{ font-size:11.5px; color:var(--text-faint); text-align:center; margin-top:14px; line-height:1.5; padding:0 12px; }
+</style>
+</head>
+<body>
+<!-- Same defensive pattern as elsewhere: deferred, nothing below assumes it loaded until checked. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<div class="app">
+
+  <header>
+    <button class="back-btn" id="backBtn" aria-label="Back to Achievements"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
+    <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
+  </header>
+
+  <span class="page-eyebrow">Training Calendar</span>
+
+  <div class="section">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statSessions">0</div><div class="stat-label">Sessions This Month</div></div>
+      <div class="stat-card"><div class="stat-num" id="statStreak">0</div><div class="stat-label">Current Streak</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="month-nav">
+      <button class="month-arrow" id="prevMonth" type="button" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="month-label" id="monthLabel">July 2026</span>
+      <button class="month-arrow" id="nextMonth" type="button" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+
+    <div class="weekday-row">
+      <span class="weekday-label">Su</span><span class="weekday-label">Mo</span><span class="weekday-label">Tu</span>
+      <span class="weekday-label">We</span><span class="weekday-label">Th</span><span class="weekday-label">Fr</span><span class="weekday-label">Sa</span>
+    </div>
+    <div class="day-grid" id="dayGrid"></div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch done"></span>Completed</div>
+      <div class="legend-item"><span class="legend-swatch today"></span>Today</div>
+      <div class="legend-item"><span class="legend-swatch future"></span>Locked</div>
+    </div>
+
+    <p class="hint">Tap any past date to log a session you forgot to mark. Completed days are locked in permanently. Future dates are locked too — no logging ahead of time.</p>
+  </div>
+
+</div>
+
+<script>
+  const Z9H = {
+    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+  };
+
+  // ============================================================
+  // ADAPTIVE THEME LAYER — same pattern as every other screen.
+  // ============================================================
+  const PATH_COLORS = {
+    calisthenics: '#4E89FF',
+    running:      '#FF8A00',
+    strength:     '#FF3B30',
+    movement:     '#CCFF00',
+    breathwork:   '#00E5FF',
+    mind:         '#AF52DE'
+  };
+  (function applyPathTheme(){
+    const storedAccent = Z9H.get('z9h_path_accent', null);
+    const storedPath = Z9H.get('z9h_active_path', 'calisthenics');
+    const accent = storedAccent || PATH_COLORS[storedPath] || PATH_COLORS.calisthenics;
+    document.documentElement.style.setProperty('--path-accent', accent);
+  })();
+
+  // ============================================================
+  // Z9H DATA CLIENT — real Supabase wiring. withTimeout wrapper on
+  // every call per Z9H standing rules.
+  // ============================================================
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+
+  function withTimeout(promise, ms) {
+    ms = ms || 10000;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), ms);
+      promise.then(
+        val => { clearTimeout(timer); resolve(val); },
+        err => { clearTimeout(timer); reject(err); }
+      );
+    });
+  }
+
+  function dateKey(d){ return d.toISOString().slice(0, 10); }
+
+  // Guard against the CDN script (deferred) not having loaded yet by the
+  // time this synchronous script runs — same real-world race condition
+  // documented from the login page build. Retry rather than fail once.
+  function waitForSupabase(callback, retries) {
+    retries = retries || 0;
+    if (typeof window.supabase !== 'undefined') {
+      callback();
+    } else if (retries >= 10) {
+      monthLabel.textContent = 'Could not load';
+    } else {
+      setTimeout(() => waitForSupabase(callback, retries + 1), 500);
+    }
+  }
+
+  let client = null;
+  let currentUser = null;
+  let missionsByDow = {};   // { 0: {id, xp_reward}, ... 6: {...} } for the active path
+  let defaultTier = 'standard';
+  const activePath = Z9H.get('z9h_active_path', 'calisthenics');
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-indexed
+
+  const dayGrid = document.getElementById('dayGrid');
+  const monthLabel = document.getElementById('monthLabel');
+  const prevBtn = document.getElementById('prevMonth');
+  const nextBtn = document.getElementById('nextMonth');
+  const statSessions = document.getElementById('statSessions');
+  const statStreak = document.getElementById('statStreak');
+
+  function isSameMonth(y, m) { return y === today.getFullYear() && m === today.getMonth(); }
+
+  function buildGrid(completedDates) {
+    dayGrid.innerHTML = '';
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const leadingBlanks = firstOfMonth.getDay(); // 0 = Sunday
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for (let i = 0; i < leadingBlanks; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'cal-cell empty';
+      dayGrid.appendChild(blank);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const cellDate = new Date(viewYear, viewMonth, day);
+      const key = dateKey(cellDate);
+      const isFuture = cellDate > today;
+      const isToday = cellDate.getTime() === today.getTime();
+      const isDone = completedDates.has(key);
+
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.textContent = day;
+
+      if (isFuture) {
+        cell.className = 'cal-cell future';
+        cell.disabled = true;
+        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day} — locked, future date`);
+      } else if (isDone) {
+        // Completed days are locked in — no undo, per the schema's write-only
+        // completions policy (see header note on this screen).
+        cell.className = 'cal-cell done';
+        cell.disabled = true;
+        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, completed`);
+      } else {
+        cell.className = 'cal-cell pending' + (isToday ? ' today' : '');
+        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, tap to mark complete`);
+        cell.addEventListener('click', () => markComplete(cellDate, key, cell));
+      }
+
+      dayGrid.appendChild(cell);
+    }
+
+    statSessions.textContent = completedDates.size;
+  }
+
+  function renderMonth() {
+    monthLabel.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    nextBtn.disabled = isSameMonth(viewYear, viewMonth); // nothing useful beyond the current month
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
+
+    withTimeout(client.from('mission_completions').select('completed_date')
+      .eq('user_id', currentUser.id)
+      .gte('completed_date', dateKey(firstOfMonth))
+      .lte('completed_date', dateKey(lastOfMonth)))
+      .then(result => {
+        if (result.error) throw result.error;
+        buildGrid(new Set((result.data || []).map(row => row.completed_date)));
+      })
+      .catch(err => {
+        console.warn('Failed to load month completions:', err.message);
+        buildGrid(new Set());
+      });
+  }
+
+  function markComplete(cellDate, key, cellEl) {
+    const dow = cellDate.getDay();
+    const mission = missionsByDow[dow];
+    if (!mission) {
+      // Only Calisthenics has real mission content right now — matches the
+      // same honest "no content yet" pattern used on Home Console.
+      cellEl.setAttribute('aria-label', 'No mission content for this path on this day yet');
+      cellEl.style.opacity = '0.5';
+      setTimeout(() => { cellEl.style.opacity = ''; }, 600);
+      return;
+    }
+
+    cellEl.disabled = true;
+    cellEl.style.opacity = '0.5';
+
+    const row = {
+      user_id: currentUser.id,
+      mission_id: mission.id,
+      tier: defaultTier,
+      time_minutes: 15, // baseline duration — retro-log doesn't ask which duration was actually done
+      xp_earned: mission.xp_reward || 150,
+      completed_date: key
+    };
+
+    withTimeout(client.from('mission_completions').insert(row))
+      .then(result => {
+        if (result.error && result.error.code !== '23505') throw result.error; // 23505 = already logged that day
+        return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
+      })
+      .then(profileResult => {
+        if (profileResult && !profileResult.error) {
+          statStreak.textContent = profileResult.data.current_streak;
+        }
+        renderMonth();
+      })
+      .catch(err => {
+        console.warn('Retro-log failed:', err.message);
+        cellEl.disabled = false;
+        cellEl.style.opacity = '';
+        cellEl.setAttribute('aria-label', 'Could not save — try again');
+      });
+  }
+
+  function init() {
+    client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    withTimeout(client.auth.getSession())
+      .then(result => {
+        if (result.error) throw result.error;
+        const user = result.data && result.data.session && result.data.session.user;
+        if (!user) { window.location.href = 'index.html'; return null; }
+        currentUser = user;
+
+        return Promise.all([
+          withTimeout(client.from('profiles').select('current_streak, default_tier').eq('id', user.id).single()),
+          withTimeout(client.from('missions').select('id, day_of_week, xp_reward').eq('path_id', activePath))
+        ]);
+      })
+      .then(results => {
+        if (!results) return; // redirected to login above
+        const [profileResult, missionsResult] = results;
+        if (profileResult.error) throw profileResult.error;
+        if (missionsResult.error) throw missionsResult.error;
+
+        defaultTier = (profileResult.data && profileResult.data.default_tier) || 'standard';
+        statStreak.textContent = (profileResult.data && profileResult.data.current_streak) || 0;
+        (missionsResult.data || []).forEach(m => { missionsByDow[m.day_of_week] = m; });
+
+        renderMonth();
+      })
+      .catch(err => {
+        console.warn('Calendar init failed:', err.message);
+        monthLabel.textContent = 'Could not load';
+      });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    viewMonth--;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderMonth();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (nextBtn.disabled) return;
+    viewMonth++;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderMonth();
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'z9h-achievements.html';
+  });
+
+  waitForSupabase(init);
+</script>
+
+<!-- ============================================================
+     LOGOUT — same self-contained pattern used across the app.
+============================================================ -->
+<script defer>
+(function () {
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+  var LOGIN_URL = 'index.html';
+
+  function attachLogout() {
+    var btn = document.getElementById('logoutBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+
+      if (typeof window.supabase === 'undefined') {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.auth.signOut().finally(function () {
+          window.location.href = LOGIN_URL;
+        });
+      } catch (err) {
+        console.warn('Sign out failed:', err.message);
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachLogout);
+  } else {
+    attachLogout();
+  }
+})();
+</script>
+</body>
+</html>

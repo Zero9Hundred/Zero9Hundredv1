@@ -143,6 +143,37 @@
     document.documentElement.style.setProperty('--path-accent', accent);
   })();
 
+  // ============================================================
+  // Z9H DATA CLIENT — real Supabase wiring, replacing the sessionStorage
+  // demo store. withTimeout wrapper on every call per Z9H standing rules.
+  // ============================================================
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+
+  function withTimeout(promise, ms) {
+    ms = ms || 10000;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), ms);
+      promise.then(
+        val => { clearTimeout(timer); resolve(val); },
+        err => { clearTimeout(timer); reject(err); }
+      );
+    });
+  }
+
+  let supaClient = null;
+  function getClient() {
+    if (supaClient) return supaClient;
+    if (typeof window.supabase === 'undefined') return null;
+    supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    try {
+      supaClient.auth.onAuthStateChange((event) => {
+        if (event === 'TOKEN_REFRESHED') return; // per Z9H governance
+      });
+    } catch (e) { /* non-fatal */ }
+    return supaClient;
+  }
+
   const session = Z9H.get('z9h_session', null);
   const exerciseList = document.getElementById('exerciseList');
   const missionName = document.getElementById('missionName');
@@ -211,21 +242,56 @@
 
   completeBtn.addEventListener('click', () => {
     if (completeBtn.disabled) return;
+    completeBtn.disabled = true;
+    completeBtnLabel.textContent = 'Saving\u2026';
 
-    completeBtn.classList.add('confirmed');
-    completeBtnLabel.textContent = 'Mission Complete';
+    const client = getClient();
+    if (!client) {
+      completeBtnLabel.textContent = 'Auth library not loaded — try again';
+      completeBtn.disabled = false;
+      return;
+    }
 
-    // DEMO-ONLY: bumps a local counter so completing a mission shows *something*
-    // persisting across the session. This is NOT real streak logic — no date
-    // checking, no once-per-day guard, no Supabase write.
-    const demoStreak = Z9H.get('z9h_demo_streak_count', 0) + 1;
-    Z9H.set('z9h_demo_streak_count', demoStreak);
+    withTimeout(client.auth.getSession())
+      .then(result => {
+        if (result.error) throw result.error;
+        const user = result.data && result.data.session && result.data.session.user;
+        if (!user) throw new Error('Not signed in');
 
-    console.log('Mission marked complete', { session, demoStreakCount: demoStreak });
+        const row = {
+          user_id: user.id,
+          mission_id: session.missionId,
+          tier: session.tier || 'standard',
+          time_minutes: Number(session.time) || 15,
+          xp_earned: (session.rewards && session.rewards.xp) || 150
+          // completed_date omitted deliberately — defaults to current_date server-side,
+          // which is correct for "mark complete right now" (retro-logging past dates
+          // is a separate, explicit flow on the Calendar screen).
+        };
 
-    setTimeout(() => {
-      window.location.href = 'z9h-home-screen-v2.html';
-    }, 900);
+        return withTimeout(client.from('mission_completions').insert(row));
+      })
+      .then(result => {
+        if (result.error) {
+          // 23505 = unique_violation on (user_id, completed_date) — they've
+          // already logged today. Not a failure from the user's point of view.
+          if (result.error.code === '23505') {
+            console.log('Already completed today — treating as success.');
+          } else {
+            throw result.error;
+          }
+        }
+        completeBtn.classList.add('confirmed');
+        completeBtnLabel.textContent = 'Mission Complete';
+        setTimeout(() => {
+          window.location.href = 'z9h-home-screen-v2.html';
+        }, 900);
+      })
+      .catch(err => {
+        console.warn('Mark Complete failed:', err.message);
+        completeBtnLabel.textContent = 'Save failed — tap to retry';
+        completeBtn.disabled = false;
+      });
   });
 </script>
 
