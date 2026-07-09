@@ -368,6 +368,32 @@
     set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
   };
 
+  // ============================================================
+  // ADAPTIVE THEME LAYER — applies the accent colour chosen on the
+  // Pathways screen. z9h_path_accent (written by the Proceed button
+  // there) is the source of truth; PATH_COLORS is a fallback map so
+  // this still works even from an older session that only stored
+  // z9h_active_path. Must run before anything below renders, since
+  // pills, tags, exercise dots and the intensity row all read
+  // var(--path-accent) at paint time. Duplicated map intentionally —
+  // same reasoning as the Z9H helper above, each screen stays
+  // self-contained.
+  // ============================================================
+  const PATH_COLORS = {
+    calisthenics: '#4E89FF',
+    running:      '#FF8A00',
+    strength:     '#FF3B30',
+    movement:     '#CCFF00',
+    breathwork:   '#00E5FF',
+    mind:         '#AF52DE'
+  };
+  (function applyPathTheme(){
+    const storedAccent = Z9H.get('z9h_path_accent', null);
+    const storedPath = Z9H.get('z9h_active_path', 'calisthenics');
+    const accent = storedAccent || PATH_COLORS[storedPath] || PATH_COLORS.calisthenics;
+    document.documentElement.style.setProperty('--path-accent', accent);
+  })();
+
   const PROFILE_DEFAULT_TIER = 'standard';
   let selectedTier = PROFILE_DEFAULT_TIER;
 
