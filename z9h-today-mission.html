@@ -174,6 +174,49 @@
     return supaClient;
   }
 
+  function dateKey(d){ return d.toISOString().slice(0, 10); }
+
+  // Guard against the CDN script (deferred) not having loaded yet by the
+  // time this synchronous script runs — same race condition documented
+  // from the login page build. Retry rather than fail once.
+  function waitForClient(callback, retries) {
+    retries = retries || 0;
+    const client = getClient();
+    if (client) {
+      callback(client);
+    } else if (retries < 10) {
+      setTimeout(() => waitForClient(callback, retries + 1), 500);
+    }
+    // Silent giveup after 10 tries — worst case, the button just shows its
+    // default state and Mark Complete still works normally when tapped.
+  }
+
+  // If today's mission is already logged (e.g. the person completed it,
+  // navigated away, and came back), reflect that immediately instead of
+  // showing a fresh "Mark Complete" button that would just hit the
+  // (user_id, completed_date) unique constraint on a second tap.
+  function checkTodayStatus(client) {
+    if (completeBtn.disabled) return; // already disabled by the no-session state below
+    withTimeout(client.auth.getSession())
+      .then(result => {
+        if (result.error) throw result.error;
+        const user = result.data && result.data.session && result.data.session.user;
+        if (!user) return null;
+        return withTimeout(client.from('mission_completions').select('id')
+          .eq('user_id', user.id)
+          .eq('completed_date', dateKey(new Date()))
+          .maybeSingle());
+      })
+      .then(result => {
+        if (result && result.data) {
+          completeBtn.classList.add('confirmed');
+          completeBtn.disabled = true;
+          completeBtnLabel.textContent = 'Mission Complete';
+        }
+      })
+      .catch(err => console.warn("Could not check today's completion status:", err.message));
+  }
+
   const session = Z9H.get('z9h_session', null);
   const exerciseList = document.getElementById('exerciseList');
   const missionName = document.getElementById('missionName');
@@ -293,6 +336,8 @@
         completeBtn.disabled = false;
       });
   });
+
+  waitForClient(checkTodayStatus);
 </script>
 
 <!-- ============================================================

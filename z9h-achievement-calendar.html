@@ -80,6 +80,44 @@
   .legend-swatch.future{ background:var(--surface-alt); border:1px solid var(--border); opacity:0.5; }
 
   .hint{ font-size:11.5px; color:var(--text-faint); text-align:center; margin-top:14px; line-height:1.5; padding:0 12px; }
+
+  /* ---------- RETRO-LOG BOTTOM SHEET ---------- */
+  .sheet-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.2s ease;
+  }
+  .sheet-overlay.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    width:100%; max-width:430px; max-height:82vh; overflow-y:auto;
+    background:var(--surface); border:1px solid var(--border); border-bottom:none;
+    border-radius:20px 20px 0 0; padding:12px 20px 28px 20px;
+    transform:translateY(100%); transition:transform 0.25s ease;
+  }
+  .sheet-overlay.open .sheet{ transform:translateY(0); }
+  .sheet-handle{ width:36px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 18px auto; }
+  .sheet-date-row{ display:flex; align-items:center; gap:7px; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--path-accent); font-weight:700; margin-bottom:10px; }
+  .sheet-date-row svg{ width:14px; height:14px; flex-shrink:0; }
+  .sheet-mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:22px; color:var(--text); margin-bottom:18px; }
+  .sheet-exercise-list{ display:flex; flex-direction:column; gap:9px; margin-bottom:20px; }
+  .sheet-ex-card{ background:var(--surface-alt); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .sheet-ex-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .sheet-ex-name-group{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  .sheet-ex-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:12px; color:var(--text-faint); flex-shrink:0; }
+  .sheet-ex-name{ font-family:'Oswald',sans-serif; font-weight:600; font-size:14.5px; color:var(--text); }
+  .sheet-ex-vol{ font-family:'Oswald',sans-serif; font-weight:700; font-size:12.5px; color:var(--path-accent); white-space:nowrap; flex-shrink:0; }
+  .sheet-ex-cue{ font-size:11.5px; color:var(--text-dim); margin-top:4px; padding-left:20px; }
+  .sheet-empty{ font-size:12.5px; color:var(--text-faint); text-align:center; padding:16px 0; }
+  .sheet-action-btn{
+    width:100%; padding:16px; border:none; border-radius:12px; font-family:'Inter'; font-weight:700;
+    font-size:15px; letter-spacing:0.4px; text-transform:uppercase; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:opacity 0.15s ease;
+  }
+  .sheet-action-btn:active{ opacity:0.8; }
+  .sheet-action-btn:disabled{ opacity:0.4; cursor:default; }
+  .sheet-action-btn.pending{ background:var(--path-accent); color:var(--bg); }
+  .sheet-action-btn.done{ background:color-mix(in srgb, #FF5C5C 18%, var(--surface-alt)); color:#FF8080; border:1px solid #FF5C5C; }
+  .sheet-action-btn svg{ width:16px; height:16px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -121,9 +159,23 @@
       <div class="legend-item"><span class="legend-swatch future"></span>Locked</div>
     </div>
 
-    <p class="hint">Tap any past date to log a session you forgot to mark. Completed days are locked in permanently. Future dates are locked too — no logging ahead of time.</p>
+    <p class="hint">Tap any past date to see that day's mission and mark it complete or undo it. Future dates are locked — no logging ahead of time.</p>
   </div>
 
+</div>
+
+<!-- ---------- RETRO-LOG BOTTOM SHEET ---------- -->
+<div class="sheet-overlay" id="sheetOverlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-date-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+      <span id="sheetDateLabel">PAST — TUESDAY, 7 JUL 2026</span>
+    </div>
+    <div class="sheet-mission-title" id="sheetMissionTitle">Upper Body Push</div>
+    <div class="sheet-exercise-list" id="sheetExerciseList"></div>
+    <button class="sheet-action-btn" id="sheetActionBtn" type="button"></button>
+  </div>
 </div>
 
 <script>
@@ -235,21 +287,188 @@
         cell.disabled = true;
         cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day} — locked, future date`);
       } else if (isDone) {
-        // Completed days are locked in — no undo, per the schema's write-only
-        // completions policy (see header note on this screen).
         cell.className = 'cal-cell done';
-        cell.disabled = true;
-        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, completed`);
+        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, completed. Tap to view`);
+        cell.addEventListener('click', () => openSheet(cellDate, key, true));
       } else {
         cell.className = 'cal-cell pending' + (isToday ? ' today' : '');
-        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, tap to mark complete`);
-        cell.addEventListener('click', () => markComplete(cellDate, key, cell));
+        cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, tap to view and mark complete`);
+        cell.addEventListener('click', () => openSheet(cellDate, key, false));
       }
 
       dayGrid.appendChild(cell);
     }
 
     statSessions.textContent = completedDates.size;
+  }
+
+  // ============================================================
+  // RETRO-LOG SHEET — shows the fixed mission for the tapped date's
+  // day-of-week, with its real exercises pulled from Supabase
+  // (exercises + exercise_variants, filtered to the profile's
+  // default_tier), and a single action button that marks or undoes.
+  // ============================================================
+  const WEEKDAY_NAMES = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const exerciseCache = {}; // keyed by `${missionId}:${tier}` — day-fixed missions repeat weekly
+
+  const sheetOverlay = document.getElementById('sheetOverlay');
+  const sheetDateLabel = document.getElementById('sheetDateLabel');
+  const sheetMissionTitle = document.getElementById('sheetMissionTitle');
+  const sheetExerciseList = document.getElementById('sheetExerciseList');
+  const sheetActionBtn = document.getElementById('sheetActionBtn');
+
+  let sheetState = null; // { cellDate, key, isDone, mission }
+
+  function formatVolume(ex) {
+    if (ex.type === 'timed') return `${ex.sets}\u00D7${ex.duration_per_set}s`;
+    return `${ex.sets}\u00D7${ex.reps_per_set}`;
+  }
+
+  function setSheetActionState(isDone) {
+    sheetActionBtn.disabled = false;
+    if (isDone) {
+      sheetActionBtn.className = 'sheet-action-btn done';
+      sheetActionBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9M3 12l4-4M3 12l4 4"/></svg> Completed — Tap to Undo';
+    } else {
+      sheetActionBtn.className = 'sheet-action-btn pending';
+      sheetActionBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark as Complete';
+    }
+  }
+
+  function openSheet(cellDate, key, isDone) {
+    const dow = cellDate.getDay();
+    const mission = missionsByDow[dow];
+    const isToday = cellDate.getTime() === today.getTime();
+
+    sheetState = { cellDate, key, isDone, mission };
+    sheetDateLabel.textContent = `${isToday ? 'TODAY' : 'PAST'} \u2014 ${WEEKDAY_NAMES[dow]}, ${cellDate.getDate()} ${MONTH_ABBR[cellDate.getMonth()]} ${cellDate.getFullYear()}`;
+    sheetExerciseList.innerHTML = '<div class="sheet-empty">Loading\u2026</div>';
+    sheetOverlay.classList.add('open');
+
+    if (!mission) {
+      sheetMissionTitle.textContent = 'No Mission Content';
+      sheetExerciseList.innerHTML = '<div class="sheet-empty">This path doesn\u2019t have content for this day yet.</div>';
+      sheetActionBtn.disabled = true;
+      sheetActionBtn.className = 'sheet-action-btn pending';
+      sheetActionBtn.textContent = 'Unavailable';
+      return;
+    }
+
+    sheetMissionTitle.textContent = mission.title || 'Mission';
+    setSheetActionState(isDone);
+
+    const cacheKey = `${mission.id}:${defaultTier}`;
+    if (exerciseCache[cacheKey]) {
+      renderSheetExercises(exerciseCache[cacheKey]);
+      return;
+    }
+
+    withTimeout(client.from('exercises')
+      .select('sort_order, exercise_variants!inner(name, type, sets, reps_per_set, duration_per_set, prompt, tier)')
+      .eq('mission_id', mission.id)
+      .eq('exercise_variants.tier', defaultTier)
+      .order('sort_order'))
+      .then(result => {
+        if (result.error) throw result.error;
+        const list = (result.data || []).map(row => {
+          const variant = Array.isArray(row.exercise_variants) ? row.exercise_variants[0] : row.exercise_variants;
+          return variant;
+        }).filter(Boolean);
+        exerciseCache[cacheKey] = list;
+        renderSheetExercises(list);
+      })
+      .catch(err => {
+        console.warn('Failed to load exercises for sheet:', err.message);
+        sheetExerciseList.innerHTML = '<div class="sheet-empty">Could not load exercises.</div>';
+      });
+  }
+
+  function renderSheetExercises(list) {
+    if (!list.length) {
+      sheetExerciseList.innerHTML = '<div class="sheet-empty">No exercises found for this tier.</div>';
+      return;
+    }
+    sheetExerciseList.innerHTML = list.map((ex, i) => `
+      <div class="sheet-ex-card">
+        <div class="sheet-ex-top">
+          <div class="sheet-ex-name-group">
+            <span class="sheet-ex-num">${String(i + 1).padStart(2, '0')}</span>
+            <span class="sheet-ex-name">${ex.name}</span>
+          </div>
+          <span class="sheet-ex-vol">${formatVolume(ex)}</span>
+        </div>
+        <div class="sheet-ex-cue">${ex.prompt || ''}</div>
+      </div>
+    `).join('');
+  }
+
+  function closeSheet() {
+    sheetOverlay.classList.remove('open');
+    sheetState = null;
+  }
+
+  sheetOverlay.addEventListener('click', (e) => {
+    if (e.target === sheetOverlay) closeSheet();
+  });
+
+  sheetActionBtn.addEventListener('click', () => {
+    if (!sheetState || !sheetState.mission || sheetActionBtn.disabled) return;
+    sheetActionBtn.disabled = true;
+    sheetState.isDone ? unmarkComplete() : markComplete();
+  });
+
+  function markComplete() {
+    const { mission, key } = sheetState;
+    const row = {
+      user_id: currentUser.id,
+      mission_id: mission.id,
+      tier: defaultTier,
+      time_minutes: 15, // baseline duration — retro-log doesn't ask which duration was actually done
+      xp_earned: mission.xp_reward || 150,
+      completed_date: key
+    };
+
+    withTimeout(client.from('mission_completions').insert(row))
+      .then(result => {
+        if (result.error && result.error.code !== '23505') throw result.error; // 23505 = already logged that day
+        return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
+      })
+      .then(profileResult => {
+        if (profileResult && !profileResult.error) statStreak.textContent = profileResult.data.current_streak;
+        sheetState.isDone = true;
+        setSheetActionState(true);
+        renderMonth();
+      })
+      .catch(err => {
+        console.warn('Retro-log failed:', err.message);
+        sheetActionBtn.disabled = false;
+        sheetActionBtn.textContent = 'Could not save \u2014 try again';
+      });
+  }
+
+  function unmarkComplete() {
+    const { key } = sheetState;
+
+    withTimeout(client.from('mission_completions').delete()
+      .eq('user_id', currentUser.id)
+      .eq('completed_date', key))
+      .then(result => {
+        if (result.error) throw result.error;
+        return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
+      })
+      .then(profileResult => {
+        if (profileResult && !profileResult.error) statStreak.textContent = profileResult.data.current_streak;
+        sheetState.isDone = false;
+        setSheetActionState(false);
+        renderMonth();
+      })
+      .catch(err => {
+        console.warn('Undo failed:', err.message);
+        sheetActionBtn.disabled = false;
+        // Most likely cause: the DELETE policy/trigger add-on hasn't been run yet.
+        sheetActionBtn.textContent = 'Could not undo \u2014 try again';
+      });
   }
 
   function renderMonth() {
@@ -273,49 +492,6 @@
       });
   }
 
-  function markComplete(cellDate, key, cellEl) {
-    const dow = cellDate.getDay();
-    const mission = missionsByDow[dow];
-    if (!mission) {
-      // Only Calisthenics has real mission content right now — matches the
-      // same honest "no content yet" pattern used on Home Console.
-      cellEl.setAttribute('aria-label', 'No mission content for this path on this day yet');
-      cellEl.style.opacity = '0.5';
-      setTimeout(() => { cellEl.style.opacity = ''; }, 600);
-      return;
-    }
-
-    cellEl.disabled = true;
-    cellEl.style.opacity = '0.5';
-
-    const row = {
-      user_id: currentUser.id,
-      mission_id: mission.id,
-      tier: defaultTier,
-      time_minutes: 15, // baseline duration — retro-log doesn't ask which duration was actually done
-      xp_earned: mission.xp_reward || 150,
-      completed_date: key
-    };
-
-    withTimeout(client.from('mission_completions').insert(row))
-      .then(result => {
-        if (result.error && result.error.code !== '23505') throw result.error; // 23505 = already logged that day
-        return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
-      })
-      .then(profileResult => {
-        if (profileResult && !profileResult.error) {
-          statStreak.textContent = profileResult.data.current_streak;
-        }
-        renderMonth();
-      })
-      .catch(err => {
-        console.warn('Retro-log failed:', err.message);
-        cellEl.disabled = false;
-        cellEl.style.opacity = '';
-        cellEl.setAttribute('aria-label', 'Could not save — try again');
-      });
-  }
-
   function init() {
     client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -328,7 +504,7 @@
 
         return Promise.all([
           withTimeout(client.from('profiles').select('current_streak, default_tier').eq('id', user.id).single()),
-          withTimeout(client.from('missions').select('id, day_of_week, xp_reward').eq('path_id', activePath))
+          withTimeout(client.from('missions').select('id, day_of_week, title, xp_reward').eq('path_id', activePath))
         ]);
       })
       .then(results => {
