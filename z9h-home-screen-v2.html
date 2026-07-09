@@ -26,11 +26,7 @@
   .app{ width:100%; max-width:430px; min-height:100vh; position:relative; padding-bottom:96px; }
 
   /* ---------- HEADER ---------- */
-  header{ display:grid; grid-template-columns:32px 1fr 32px; align-items:center; column-gap:6px; padding:8px 14px 0 14px; }
-  header .wordmark{ text-align:center; }
-  .logout-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 8px rgba(78,137,255,0.35); transition:opacity 0.2s ease; }
-  .logout-btn:active{ opacity:0.7; }
-  .logout-btn svg{ width:15px; height:15px; stroke:var(--signal); }
+  header{ display:flex; align-items:center; justify-content:center; padding:8px 14px 0 14px; }
   header .wordmark{ text-align:center; overflow:hidden; }
 
   /* ---------- WORDMARK ---------- */
@@ -129,152 +125,10 @@
 </style>
 </head>
 <body>
-<!-- Same defensive pattern as index.html: deferred, nothing below assumes it loaded until checked. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-
-<!-- ============================================================
-     SESSION GATE — checked before the app is shown. Covers the
-     whole screen until we've confirmed a real Supabase session
-     exists; redirects to index.html if not. Prevents the app from
-     ever flashing visible before an auth check completes.
-============================================================ -->
-<div id="sessionGate" style="position:fixed; inset:0; background:#050608; z-index:999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
-  <div style="font-family:'Oswald',sans-serif; font-weight:700; letter-spacing:2px; color:#C6CED4; font-size:14px; text-transform:uppercase;">VERIFYING ACCESS</div>
-  <div id="sessionGateMsg" style="font-size:12px; color:#8A9199;">Checking your session&hellip;</div>
-</div>
-
-<script defer>
-(function () {
-  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
-  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
-  var LOGIN_URL = 'index.html';
-
-  function withTimeout(promise, ms) {
-    ms = ms || 10000;
-    return new Promise(function (resolve, reject) {
-      var timer = setTimeout(function () { reject(new Error('timeout')); }, ms);
-      promise.then(
-        function (val) { clearTimeout(timer); resolve(val); },
-        function (err) { clearTimeout(timer); reject(err); }
-      );
-    });
-  }
-
-  function gateMsg(msg) {
-    var el = document.getElementById('sessionGateMsg');
-    if (el) el.textContent = msg;
-  }
-
-  function revealApp() {
-    var gate = document.getElementById('sessionGate');
-    if (gate) gate.remove();
-  }
-
-  function sendToLogin() {
-    window.location.href = LOGIN_URL;
-  }
-
-  function checkSession() {
-    if (typeof window.supabase === 'undefined') {
-      // Fail safe, not fail open: if we can't even load the auth library,
-      // we cannot confirm the user is who they say they are — send them
-      // to login rather than showing the app unguarded.
-      gateMsg('Could not load the auth library. Redirecting to sign in\u2026');
-      setTimeout(sendToLogin, 1200);
-      return;
-    }
-
-    var client;
-    try {
-      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (err) {
-      gateMsg('Auth client failed to start. Redirecting to sign in\u2026');
-      setTimeout(sendToLogin, 1200);
-      return;
-    }
-
-    withTimeout(client.auth.getSession())
-      .then(function (result) {
-        if (result.error) throw result.error;
-        if (result.data && result.data.session) {
-          revealApp();
-        } else {
-          sendToLogin();
-        }
-      })
-      .catch(function (err) {
-        console.warn('Session check failed:', err.message);
-        sendToLogin();
-      });
-
-    // Per Z9H governance: TOKEN_REFRESHED is routine and should never
-    // trigger a re-check or UI reaction.
-    try {
-      client.auth.onAuthStateChange(function (event) {
-        if (event === 'TOKEN_REFRESHED') return;
-        if (event === 'SIGNED_OUT') sendToLogin();
-      });
-    } catch (err) {
-      console.warn('Auth state listener failed to attach:', err);
-    }
-  }
-
-  checkSession();
-})();
-</script>
-
-<!-- ============================================================
-     LOGOUT — separate small script, kept independent of the session
-     gate above. Creates its own lightweight client rather than sharing
-     scope, matching the modular one-job-per-script pattern already
-     used across the app.
-============================================================ -->
-<script defer>
-(function () {
-  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
-  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
-  var LOGIN_URL = 'index.html';
-
-  function attachLogout() {
-    var btn = document.getElementById('logoutBtn');
-    if (!btn) return;
-
-    btn.addEventListener('click', function () {
-      btn.disabled = true;
-
-      if (typeof window.supabase === 'undefined') {
-        // Can't confirm server-side logout, but there's no local session
-        // worth protecting either way — send them to login regardless.
-        window.location.href = LOGIN_URL;
-        return;
-      }
-
-      try {
-        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        client.auth.signOut().finally(function () {
-          window.location.href = LOGIN_URL;
-        });
-      } catch (err) {
-        console.warn('Sign out failed:', err.message);
-        window.location.href = LOGIN_URL;
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachLogout);
-  } else {
-    attachLogout();
-  }
-})();
-</script>
-
 <div class="app">
 
   <header>
-    <div></div>
     <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
-    <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
 
   <div class="wordmark-block">
