@@ -2,72 +2,111 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Z9H — Choose Your Path</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#050608;
     --surface:#0D0F14;
+    --surface-alt:#12151B;
     --border:#202530;
+    --platinum:#C6CED4;
+    --signal:#4E89FF;
     --path-accent:#4E89FF;
     --text:#F1F3F7;
+    --text-faint:#54595E;
+    --text-dim:#8A9199;
   }
-  /* --- Added Styles for Proceed Button & Glow --- */
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{ display:flex; justify-content:center; min-height:100vh; }
+  .app{ width:100%; max-width:430px; min-height:100vh; position:relative; padding-bottom:96px; }
+
+  /* ---------- PATH CARDS & PROCEED BUTTON ---------- */
+  .path-stack{ padding:0 20px; display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  .path-card{ position:relative; display:flex; flex-direction:column; align-items:flex-start; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px 14px 16px 14px; cursor:pointer; transition:border-color 0.2s ease; }
+  .path-card.selected{ border-color:var(--path-accent); }
+
   .proceed-btn {
+    display: none;
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     background: var(--path-accent);
     color: var(--bg);
     border: none;
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
     font-family: 'Oswald', sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     cursor: pointer;
     box-shadow: 0 0 10px var(--path-accent);
-    display: none; /* Hidden by default */
+    z-index: 10;
   }
   .path-card.selected .proceed-btn { display: block; }
-  .path-card { position: relative; } /* Necessary for absolute positioning of button */
-  
-  /* Retaining your existing styles below... */
-  /* [Include your existing CSS here, keeping the rest of the file as is] */
+
+  /* Keep your existing header, badge, info-block, and nav styles below */
+  header{ display:grid; grid-template-columns:36px 1fr 36px; align-items:center; column-gap:6px; padding:12px 16px 0 16px; }
+  .icon-btn{ width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .header-wordmark{ text-align:center; font-family:'Oswald',sans-serif; font-weight:700; font-size:32px; color:var(--text); }
+  .accent-blue{ color:var(--path-accent); }
+  .intro{ padding:14px 20px 18px 20px; text-align:center; }
+  .badge-frame{ position:relative; width:46px; height:46px; margin-bottom:10px; }
+  .badge-hex{ position:absolute; width:100%; height:100%; fill:none; stroke:var(--border); stroke-width:1.5; }
+  .path-card.selected .badge-hex{ stroke:var(--path-accent); }
+  .badge-icon{ width:19px; height:19px; stroke:var(--text-dim); fill:none; position:relative; z-index:1; }
+  .path-card.selected .badge-icon{ stroke:var(--path-accent); }
+  .path-name{ font-family:'Oswald',sans-serif; font-size:14px; color:var(--text); }
+  .path-motto{ font-size:10.5px; color:var(--text-dim); }
+  .info-block{ margin:4px 20px 0 20px; background:var(--surface-alt); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(5,6,8,0.92); border-top:1px solid var(--border); display:flex; justify-content:space-around; padding:10px 4px; z-index:10; }
+  .nav-item{ color:var(--text-faint); font-size:10px; text-transform:uppercase; text-decoration:none; }
 </style>
 </head>
 <body>
-<div class="path-stack" id="pathStack">
-  <div class="path-card" data-path="calisthenics">
-    <button class="proceed-btn">Proceed</button>
-    <div class="badge-frame"></div>
-    <div class="path-details"></div>
+<div class="app">
+  <header>
+    <button class="icon-btn" id="backBtn"><svg viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="header-wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
+    <div></div>
+  </header>
+
+  <div class="intro">
+    <h1>Choose Your Path</h1>
   </div>
-  </div>
+
+  <div class="path-stack" id="pathStack">
+    <div class="path-card" data-path="calisthenics">
+      <button class="proceed-btn">Proceed</button>
+      <div class="badge-frame"><svg class="badge-hex" viewBox="0 0 100 100"><polygon points="50,2 93,26 93,74 50,98 7,74 7,26"/></svg></div>
+      <div class="path-details">
+        <span class="path-name">Calisthenics</span>
+        <div class="path-motto">Control your body.</div>
+      </div>
+    </div>
+    </div>
+</div>
 
 <script>
   const cards = document.querySelectorAll('.path-card');
-  const proceedBtns = document.querySelectorAll('.proceed-btn');
-
+  
   cards.forEach(card => {
+    // Select path on tap
     card.addEventListener('click', () => {
-      // 1. Remove selection from all cards
       cards.forEach(c => c.classList.remove('selected'));
-      
-      // 2. Add selection to clicked card
       card.classList.add('selected');
-      
-      // 3. Update active path state
-      const chosen = card.getAttribute('data-path');
-      Z9H.set('z9h_active_path', chosen);
     });
-  });
 
-  // Handle Proceed button navigation
-  proceedBtns.forEach(btn => {
+    // Handle Proceed button navigation
+    const btn = card.querySelector('.proceed-btn');
     btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent triggering the card selection logic again
+      e.stopPropagation(); // Prevent triggering the card's click event
+      const chosen = card.getAttribute('data-path');
+      sessionStorage.setItem('z9h_active_path', JSON.stringify(chosen));
       window.location.href = 'z9h-home-screen-v2.html';
     });
   });
