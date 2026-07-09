@@ -36,11 +36,11 @@
   /* ---------- WORDMARK ---------- */
   .wordmark-block{ text-align:center; padding:6px 16px 8px 16px; }
   .wordmark{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
-  .wordmark .accent-blue{ color:var(--signal); }
+  .wordmark .accent-blue{ color:var(--path-accent); }
   .wordmark-tagline{ margin-top:8px; font-family:'Oswald',sans-serif; font-weight:500; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--platinum); white-space:nowrap; }
   .path-badge{ display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:5px 12px; border-radius:20px; background:var(--surface); border:1px solid var(--border); font-family:'Inter'; font-weight:600; font-size:11px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-dim); cursor:pointer; -webkit-appearance:none; appearance:none; }
   .path-badge:active{ opacity:0.7; }
-  .path-dot{ width:6px; height:6px; border-radius:50%; background:var(--signal); flex-shrink:0; }
+  .path-dot{ width:6px; height:6px; border-radius:50%; background:var(--path-accent); flex-shrink:0; }
   .path-chevron{ width:10px; height:10px; stroke:var(--text-faint); fill:none; margin-left:1px; }
 
   /* ---------- SECTION LABEL ---------- */
@@ -114,7 +114,7 @@
     box-shadow:0 0 14px -3px var(--path-accent);
   }
 
-  .start-btn{ width:100%; padding:19px; border:none; border-radius:12px; background:var(--signal); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:16px; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 8px 24px -8px rgba(78,137,255,0.4); transition:all 0.15s ease; }
+  .start-btn{ width:100%; padding:19px; border:none; border-radius:12px; background:var(--path-accent); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:16px; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 8px 24px -8px color-mix(in srgb, var(--path-accent) 40%, transparent); transition:all 0.15s ease; }
   .start-btn svg{ width:17px; height:17px; }
   .start-btn:active{ opacity:0.85; transform:scale(0.98); }
   .start-btn.confirmed{ background:#2fbf71; box-shadow:0 8px 24px -8px rgba(47,191,113,0.4); }
