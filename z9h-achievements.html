@@ -27,11 +27,14 @@
 
   /* ---------- HEADER ---------- */
   header{ display:grid; grid-template-columns:32px 1fr 32px; align-items:center; column-gap:6px; padding:12px 16px 0 16px; }
-  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; transition:opacity 0.2s ease; }
+  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--path-accent); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:opacity 0.2s ease; }
   .back-btn:active{ opacity:0.7; }
-  .back-btn svg{ width:15px; height:15px; stroke:var(--text-dim); }
+  .back-btn svg{ width:15px; height:15px; stroke:var(--path-accent); }
+  .logout-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 8px rgba(78,137,255,0.35); flex-shrink:0; transition:opacity 0.2s ease; }
+  .logout-btn:active{ opacity:0.7; }
+  .logout-btn svg{ width:15px; height:15px; stroke:var(--signal); }
+  .wordmark .accent-blue{ color:var(--path-accent); }
   .wordmark{ text-align:center; overflow:hidden; font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
-  .wordmark .accent-blue{ color:var(--signal); }
   .wordmark-tagline{ text-align:center; margin:8px 0 4px 0; font-family:'Oswald',sans-serif; font-weight:500; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--platinum); }
   .page-eyebrow{ text-align:center; font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--path-accent); font-weight:700; margin-bottom:18px; display:block; }
 
@@ -57,7 +60,7 @@
   .day-letter{ font-size:9px; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; }
   .day-dot{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface-alt); border:1px solid var(--border); }
   .day-dot.done{ background:var(--platinum); border-color:var(--platinum); }
-  .day-dot.today{ background:var(--surface-alt); border:2px solid var(--signal); }
+  .day-dot.today{ background:var(--surface-alt); border:2px solid var(--path-accent); }
   .day-dot.done svg{ width:13px; height:13px; stroke:#050608; }
 
   /* ---------- PLACEHOLDER FOR FUTURE ACHIEVEMENT CONTENT ---------- */
@@ -71,16 +74,18 @@
   .nav-item svg{ width:23px; height:23px; stroke:var(--text-faint); fill:none; }
   .nav-item.active{ color:var(--platinum); }
   .nav-item.active svg{ stroke:var(--platinum); }
-  .nav-dot-alert{ position:absolute; top:2px; right:10px; width:6px; height:6px; border-radius:50%; background:var(--signal); }
+  .nav-dot-alert{ position:absolute; top:2px; right:10px; width:6px; height:6px; border-radius:50%; background:var(--path-accent); }
 </style>
 </head>
 <body>
+<!-- Same defensive pattern as Home Console: deferred, nothing below assumes it loaded until checked. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <div class="app">
 
   <header>
     <button class="back-btn" id="backBtn" aria-label="Back to Home"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
-    <div></div>
+    <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
 
   <div class="wordmark-tagline">DISCIPLINE. FOCUS. STRENGTH.</div>
@@ -92,7 +97,7 @@
       <div class="streak-left">
         <div class="streak-count">
           <span class="streak-num">14</span>
-          <svg class="streak-flame" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <svg class="streak-flame" viewBox="0 0 24 24" fill="none" stroke="var(--path-accent)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         </div>
         <span class="streak-label">Days Completed</span>
         <span class="streak-msg">Discipline compounds daily.</span>
@@ -135,9 +140,74 @@
 </div>
 
 <script>
+  const Z9H = {
+    get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+    set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+  };
+
+  // ============================================================
+  // ADAPTIVE THEME LAYER — same pattern as Home Console / Mission.
+  // ============================================================
+  const PATH_COLORS = {
+    calisthenics: '#4E89FF',
+    running:      '#FF8A00',
+    strength:     '#FF3B30',
+    movement:     '#CCFF00',
+    breathwork:   '#00E5FF',
+    mind:         '#AF52DE'
+  };
+  (function applyPathTheme(){
+    const storedAccent = Z9H.get('z9h_path_accent', null);
+    const storedPath = Z9H.get('z9h_active_path', 'calisthenics');
+    const accent = storedAccent || PATH_COLORS[storedPath] || PATH_COLORS.calisthenics;
+    document.documentElement.style.setProperty('--path-accent', accent);
+  })();
+
   document.getElementById('backBtn').addEventListener('click', () => {
     window.location.href = 'z9h-home-screen-v2.html';
   });
+</script>
+
+<!-- ============================================================
+     LOGOUT — same self-contained pattern used on Home Console
+     and Today's Mission. Duplicated intentionally.
+============================================================ -->
+<script defer>
+(function () {
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+  var LOGIN_URL = 'index.html';
+
+  function attachLogout() {
+    var btn = document.getElementById('logoutBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+
+      if (typeof window.supabase === 'undefined') {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.auth.signOut().finally(function () {
+          window.location.href = LOGIN_URL;
+        });
+      } catch (err) {
+        console.warn('Sign out failed:', err.message);
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachLogout);
+  } else {
+    attachLogout();
+  }
+})();
 </script>
 </body>
 </html>

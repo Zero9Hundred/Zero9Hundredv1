@@ -27,11 +27,14 @@
 
   /* ---------- HEADER (matches Home Console / Path Selection / Achievements) ---------- */
   header{ display:grid; grid-template-columns:32px 1fr 32px; align-items:center; column-gap:6px; padding:8px 16px 0 16px; }
-  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; transition:opacity 0.2s ease; }
+  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--path-accent); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:opacity 0.2s ease; }
   .back-btn:active{ opacity:0.7; }
-  .back-btn svg{ width:15px; height:15px; stroke:var(--text-dim); }
+  .back-btn svg{ width:15px; height:15px; stroke:var(--path-accent); }
+  .logout-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 8px rgba(78,137,255,0.35); flex-shrink:0; transition:opacity 0.2s ease; }
+  .logout-btn:active{ opacity:0.7; }
+  .logout-btn svg{ width:15px; height:15px; stroke:var(--signal); }
   .wordmark{ text-align:center; overflow:hidden; font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); line-height:1; white-space:nowrap; }
-  .wordmark .accent-blue{ color:var(--signal); }
+  .wordmark .accent-blue{ color:var(--path-accent); }
   .wordmark-tagline{ text-align:center; margin:8px 0 0 0; font-family:'Oswald',sans-serif; font-weight:500; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--platinum); }
   .path-badge-wrap{ text-align:center; margin-bottom:14px; }
   .path-badge{ display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:5px 12px; border-radius:20px; background:var(--surface); border:1px solid var(--border); font-family:'Inter'; font-weight:600; font-size:11px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-dim); }
@@ -52,7 +55,7 @@
   .exercise-title-group{ display:flex; align-items:baseline; gap:8px; min-width:0; flex:1; }
   .exercise-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--text-faint); flex-shrink:0; }
   .exercise-name{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:none; font-size:15.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .exercise-vol{ font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--signal); white-space:nowrap; flex-shrink:0; }
+  .exercise-vol{ font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--path-accent); white-space:nowrap; flex-shrink:0; }
   .exercise-cue{ font-size:12px; color:var(--text-dim); line-height:1.3; margin-top:5px; padding-left:21px; }
 
   /* Per-set tracking — independent circular checkboxes, one per set, squeezed
@@ -60,11 +63,11 @@
      Mark Complete button below never checks this state. */
   .set-trackers{ display:flex; gap:5px; flex-shrink:0; }
   .set-dot{ appearance:none; -webkit-appearance:none; width:19px; height:19px; margin:0; padding:0; flex-shrink:0; border:1.5px solid var(--border); border-radius:50%; background:var(--surface-alt); cursor:pointer; transition:all 0.2s ease; }
-  .set-dot:checked{ background:var(--signal); border-color:var(--signal); box-shadow:0 0 8px rgba(78,137,255,0.55); }
+  .set-dot:checked{ background:var(--path-accent); border-color:var(--path-accent); box-shadow:0 0 8px color-mix(in srgb, var(--path-accent) 55%, transparent); }
   .set-dot:active{ opacity:0.8; }
 
   /* ---------- MARK COMPLETE ---------- */
-  .complete-btn{ width:100%; padding:19px; border:none; border-radius:12px; background:var(--signal); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:16px; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 8px 24px -8px rgba(78,137,255,0.4); transition:all 0.15s ease; }
+  .complete-btn{ width:100%; padding:19px; border:none; border-radius:12px; background:var(--path-accent); color:#FFFFFF; font-family:'Inter'; font-weight:700; font-size:16px; letter-spacing:0.5px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 8px 24px -8px color-mix(in srgb, var(--path-accent) 40%, transparent); transition:all 0.15s ease; }
   .complete-btn svg{ width:18px; height:18px; }
   .complete-btn:active{ opacity:0.85; transform:scale(0.98); }
   .complete-btn.confirmed{ background:#2fbf71; box-shadow:0 8px 24px -8px rgba(47,191,113,0.4); }
@@ -73,12 +76,14 @@
 </style>
 </head>
 <body>
+<!-- Same defensive pattern as Home Console: deferred, nothing below assumes it loaded until checked. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <div class="app">
 
   <header>
-    <button class="back-btn" id="backBtn" aria-label="Back to Home"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="back-btn" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
-    <div></div>
+    <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
 
   <div class="wordmark-tagline">DISCIPLINE. FOCUS. STRENGTH.</div>
@@ -117,6 +122,26 @@
     get(key, fallback){ try{ const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
     set(key, value){ try{ sessionStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
   };
+
+  // ============================================================
+  // ADAPTIVE THEME LAYER — same pattern as Home Console. Must run
+  // before the exercise list renders below, since exercise-vol,
+  // set-dot, and complete-btn all read var(--path-accent) at paint time.
+  // ============================================================
+  const PATH_COLORS = {
+    calisthenics: '#4E89FF',
+    running:      '#FF8A00',
+    strength:     '#FF3B30',
+    movement:     '#CCFF00',
+    breathwork:   '#00E5FF',
+    mind:         '#AF52DE'
+  };
+  (function applyPathTheme(){
+    const storedAccent = Z9H.get('z9h_path_accent', null);
+    const storedPath = Z9H.get('z9h_active_path', 'calisthenics');
+    const accent = storedAccent || PATH_COLORS[storedPath] || PATH_COLORS.calisthenics;
+    document.documentElement.style.setProperty('--path-accent', accent);
+  })();
 
   const session = Z9H.get('z9h_session', null);
   const exerciseList = document.getElementById('exerciseList');
@@ -179,6 +204,8 @@
   }
 
   document.getElementById('backBtn').addEventListener('click', () => {
+    // Fixed app sequence: Login -> Pathways -> Home -> Mission.
+    // Mission's previous step is Home.
     window.location.href = 'z9h-home-screen-v2.html';
   });
 
@@ -200,6 +227,49 @@
       window.location.href = 'z9h-home-screen-v2.html';
     }, 900);
   });
+</script>
+
+<!-- ============================================================
+     LOGOUT — same self-contained pattern used on Home Console.
+     Duplicated intentionally rather than shared, since every screen
+     stays a standalone file with no build step.
+============================================================ -->
+<script defer>
+(function () {
+  var SUPABASE_URL = 'https://kfftrdsrzqjjvfdsrgzf.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_nq44HeB6FcTZEWr9CpxvCg_XTWnu48x';
+  var LOGIN_URL = 'index.html';
+
+  function attachLogout() {
+    var btn = document.getElementById('logoutBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+
+      if (typeof window.supabase === 'undefined') {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      try {
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        client.auth.signOut().finally(function () {
+          window.location.href = LOGIN_URL;
+        });
+      } catch (err) {
+        console.warn('Sign out failed:', err.message);
+        window.location.href = LOGIN_URL;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachLogout);
+  } else {
+    attachLogout();
+  }
+})();
 </script>
 </body>
 </html>

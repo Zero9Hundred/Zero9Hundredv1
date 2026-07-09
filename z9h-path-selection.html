@@ -267,14 +267,9 @@
   });
 
   document.getElementById('backBtn').addEventListener('click', () => {
-    // Real browser back — this screen is reached both as the mandatory
-    // first stop after login and as a "change path" detour from Home,
-    // so a fixed destination would be wrong in one of those two cases.
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = 'index.html'; // direct-load fallback (e.g. bookmarked)
-    }
+    // Fixed app sequence: Login -> Pathways -> Home -> Mission.
+    // Pathways' previous step is Login.
+    window.location.href = 'index.html';
   });
 </script>
 </body>

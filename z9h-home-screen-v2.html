@@ -705,14 +705,9 @@
   });
 
   document.getElementById('backBtn').addEventListener('click', () => {
-    // Real browser back, matching the Pathways screen's approach — Home
-    // is reachable from Pathways (normal flow) or possibly other future
-    // screens later, so a fixed destination isn't the right call here.
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = 'z9h-path-selection.html'; // direct-load fallback
-    }
+    // Fixed app sequence: Login -> Pathways -> Home -> Mission.
+    // Home's previous step is Pathways.
+    window.location.href = 'z9h-path-selection.html';
   });
 
   const chips = document.querySelectorAll('.pill');
