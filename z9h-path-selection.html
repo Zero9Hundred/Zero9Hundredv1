@@ -29,6 +29,11 @@
   .icon-btn{ width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition:opacity 0.2s ease; }
   .icon-btn:active{ opacity:0.7; }
   .icon-btn svg{ width:16px; height:16px; stroke:var(--text-dim); fill:none; }
+  .icon-btn.back-btn{
+    border-color:var(--path-accent);
+    box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent);
+  }
+  .icon-btn.back-btn svg{ stroke:var(--path-accent); }
   .header-wordmark{ text-align:center; font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:clamp(28px, 9.5vw, 38px); letter-spacing:-0.5px; color:var(--text); white-space:nowrap; }
   .header-wordmark .accent-blue{ color:var(--path-accent); }
 
@@ -69,7 +74,7 @@
   }
   .path-card.selected .proceed-btn{
     opacity:1; transform:scale(1); pointer-events:auto;
-    box-shadow:0 0 12px 2px rgba(78,137,255,0.65), 0 0 2px 0 rgba(78,137,255,0.9);
+    box-shadow:0 0 12px 2px color-mix(in srgb, var(--path-accent) 65%, transparent), 0 0 2px 0 color-mix(in srgb, var(--path-accent) 90%, transparent);
   }
   .proceed-btn svg{ width:14px; height:14px; stroke:#050608; stroke-width:2.5; fill:none; }
   .proceed-btn:active{ transform:scale(0.92); }
@@ -93,7 +98,7 @@
 <div class="app">
 
   <header>
-    <button class="icon-btn" id="backBtn" aria-label="Back to Home"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="icon-btn back-btn" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="header-wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
     <div></div>
   </header>
@@ -262,7 +267,14 @@
   });
 
   document.getElementById('backBtn').addEventListener('click', () => {
-    window.location.href = 'z9h-home-screen-v2.html';
+    // Real browser back — this screen is reached both as the mandatory
+    // first stop after login and as a "change path" detour from Home,
+    // so a fixed destination would be wrong in one of those two cases.
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = 'index.html'; // direct-load fallback (e.g. bookmarked)
+    }
   });
 </script>
 </body>

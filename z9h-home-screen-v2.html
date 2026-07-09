@@ -31,6 +31,9 @@
   .logout-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 8px rgba(78,137,255,0.35); transition:opacity 0.2s ease; }
   .logout-btn:active{ opacity:0.7; }
   .logout-btn svg{ width:15px; height:15px; stroke:var(--signal); }
+  .back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--path-accent); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:opacity 0.2s ease; }
+  .back-btn:active{ opacity:0.7; }
+  .back-btn svg{ width:15px; height:15px; stroke:var(--path-accent); }
   header .wordmark{ text-align:center; overflow:hidden; }
 
   /* ---------- WORDMARK ---------- */
@@ -287,8 +290,7 @@
 <div class="app">
 
   <header>
-    <div></div>
-    <div class="wordmark">ZERO<span class="accent-blue">9</span>HUNDRED</div>
+    <button class="back-btn" id="backBtn" type="button" aria-label="Back"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M15 18l-6-6 6-6"/></svg></button>
     <button class="logout-btn" id="logoutBtn" type="button" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
   </header>
 
@@ -699,6 +701,17 @@
 
   pathBadge.addEventListener('click', () => {
     window.location.href = 'z9h-path-selection.html';
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    // Real browser back, matching the Pathways screen's approach — Home
+    // is reachable from Pathways (normal flow) or possibly other future
+    // screens later, so a fixed destination isn't the right call here.
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = 'z9h-path-selection.html'; // direct-load fallback
+    }
   });
 
   const chips = document.querySelectorAll('.pill');
