@@ -68,10 +68,23 @@
   .calendar-btn svg{ width:15px; height:15px; flex-shrink:0; }
   .calendar-btn:active{ opacity:0.7; }
 
-  /* ---------- PLACEHOLDER FOR FUTURE ACHIEVEMENT CONTENT ---------- */
-  .coming-soon{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center; }
-  .coming-soon-title{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; font-size:13px; letter-spacing:0.5px; color:var(--text-dim); margin-bottom:6px; }
-  .coming-soon-sub{ font-size:12px; color:var(--text-faint); }
+  /* ---------- MILESTONE BADGES (hex-frame language, matching Pathways) ---------- */
+  .badge-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .badge-card{ display:flex; flex-direction:column; align-items:center; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 12px 16px 12px; transition:border-color 0.2s ease; }
+  .badge-card.unlocked{ border-color:var(--path-accent); }
+
+  .badge-frame{ position:relative; width:52px; height:52px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  .badge-hex{ position:absolute; width:100%; height:100%; fill:none; stroke:var(--border); stroke-width:1.5; transition:stroke 0.2s ease; }
+  .badge-card.unlocked .badge-hex{ stroke:var(--path-accent); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--path-accent) 55%, transparent)); }
+  .badge-icon{ width:20px; height:20px; stroke:var(--text-faint); stroke-width:1.8; fill:none; position:relative; z-index:1; transition:stroke 0.2s ease; }
+  .badge-card.unlocked .badge-icon{ stroke:var(--path-accent); }
+
+  .badge-name{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; font-size:12.5px; letter-spacing:0.2px; color:var(--text-faint); margin-bottom:4px; }
+  .badge-card.unlocked .badge-name{ color:var(--text); }
+  .badge-motto{ font-size:10px; line-height:1.4; color:var(--text-faint); min-height:26px; }
+  .badge-card.unlocked .badge-motto{ color:var(--text-dim); }
+  .badge-lock-label{ margin-top:8px; font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-faint); font-weight:700; }
+  .badge-card.unlocked .badge-lock-label{ color:var(--path-accent); }
 
   /* ---------- BOTTOM NAV (identical to Home Console) ---------- */
   nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(5,6,8,0.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; z-index:10; }
@@ -132,10 +145,7 @@
 
   <div class="section">
     <span class="eyebrow">Milestones &amp; Badges</span>
-    <div class="coming-soon">
-      <div class="coming-soon-title">Coming Soon</div>
-      <div class="coming-soon-sub">Badge system and milestone tracking haven't been built yet.</div>
-    </div>
+    <div class="badge-grid" id="badgeGrid"></div>
   </div>
 
   <nav aria-label="Primary">
@@ -200,6 +210,45 @@
     return `${y}-${m}-${day}`;
   }
 
+  // ============================================================
+  // MILESTONE BADGES — Phase 1, streak-only. Every threshold reads
+  // straight off profiles.longest_streak, which already exists,
+  // already ratchets up permanently, and is untouched by undo — so
+  // no new schema, no new writes, just a comparison against a number
+  // already being fetched below.
+  // ============================================================
+  const BADGES = [
+    { id: 'first_step', name: 'First Step',    motto: 'Complete your first mission.',                threshold: 1,   icon: 'target' },
+    { id: 'streak_7',   name: '7 Day Streak',  motto: 'A week of discipline. The habit is built.',    threshold: 7,   icon: 'flame'  },
+    { id: 'streak_14',  name: '14 Day Streak', motto: 'Two weeks of focus. Keep pushing.',             threshold: 14,  icon: 'flame'  },
+    { id: 'streak_30',  name: '30 Day Streak', motto: 'A month of consistency. You\u2019re levelling up.', threshold: 30, icon: 'flame' },
+    { id: 'streak_60',  name: '60 Day Streak', motto: 'Two months strong. Unstoppable.',               threshold: 60,  icon: 'flame'  },
+    { id: 'streak_100', name: '100 Day Streak', motto: 'A true milestone. You\u2019re elite.',          threshold: 100, icon: 'flame'  }
+  ];
+
+  const BADGE_ICONS = {
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+    flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>'
+  };
+
+  function renderBadges(longestStreak) {
+    const grid = document.getElementById('badgeGrid');
+    grid.innerHTML = BADGES.map(b => {
+      const unlocked = longestStreak >= b.threshold;
+      return `
+        <div class="badge-card${unlocked ? ' unlocked' : ''}">
+          <div class="badge-frame">
+            <svg class="badge-hex" viewBox="0 0 100 100"><polygon points="50,2 93,26 93,74 50,98 7,74 7,26"/></svg>
+            <svg class="badge-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">${BADGE_ICONS[b.icon]}</svg>
+          </div>
+          <div class="badge-name">${b.name}</div>
+          <div class="badge-motto">${b.motto}</div>
+          <div class="badge-lock-label">${unlocked ? 'Unlocked' : `Reach ${b.threshold} Days`}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
   function loadStreakAndWeek() {
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -221,7 +270,7 @@
         sunday.setDate(monday.getDate() + 6);
 
         return Promise.all([
-          withTimeout(client.from('profiles').select('current_streak').eq('id', user.id).single()),
+          withTimeout(client.from('profiles').select('current_streak, longest_streak').eq('id', user.id).single()),
           withTimeout(client.from('mission_completions').select('completed_date')
             .eq('user_id', user.id)
             .gte('completed_date', dateKey(monday))
@@ -235,11 +284,14 @@
         if (weekResult.error) throw weekResult.error;
 
         const streak = (profileResult.data && profileResult.data.current_streak) || 0;
+        const longestStreak = (profileResult.data && profileResult.data.longest_streak) || 0;
         const completedDates = new Set((weekResult.data || []).map(row => row.completed_date));
 
         document.getElementById('streakNum').textContent = streak;
         document.getElementById('streakMsg').textContent =
           streak > 0 ? 'Discipline compounds daily.' : 'Complete a mission to start your streak.';
+
+        renderBadges(longestStreak);
 
         const now = new Date();
         const todayDow = now.getDay();
