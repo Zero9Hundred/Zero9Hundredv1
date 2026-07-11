@@ -69,6 +69,8 @@
   .calendar-btn:active{ opacity:0.7; }
 
   /* ---------- MILESTONE BADGES (hex-frame language, matching Pathways) ---------- */
+  .badge-header-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .badge-count{ font-family:'Oswald',sans-serif; font-weight:700; font-size:12px; color:var(--path-accent); letter-spacing:0.3px; }
   .badge-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .badge-card{ display:flex; flex-direction:column; align-items:center; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 12px 16px 12px; transition:border-color 0.2s ease; }
   .badge-card.unlocked{ border-color:var(--path-accent); }
@@ -83,6 +85,10 @@
   .badge-card.unlocked .badge-name{ color:var(--text); }
   .badge-motto{ font-size:10px; line-height:1.4; color:var(--text-faint); min-height:26px; }
   .badge-card.unlocked .badge-motto{ color:var(--text-dim); }
+
+  .badge-progress-track{ width:100%; height:4px; border-radius:2px; background:var(--surface-alt); margin-top:8px; overflow:hidden; }
+  .badge-progress-fill{ height:100%; border-radius:2px; background:var(--path-accent); box-shadow:0 0 6px color-mix(in srgb, var(--path-accent) 70%, transparent); transition:width 0.3s ease; }
+
   .badge-lock-label{ margin-top:8px; font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-faint); font-weight:700; }
   .badge-card.unlocked .badge-lock-label{ color:var(--path-accent); }
 
@@ -144,7 +150,10 @@
   </div>
 
   <div class="section">
-    <span class="eyebrow">Milestones &amp; Badges</span>
+    <div class="badge-header-row">
+      <span class="eyebrow" style="margin-bottom:0;">Milestones &amp; Badges</span>
+      <span class="badge-count" id="badgeCount">0 / 0</span>
+    </div>
     <div class="badge-grid" id="badgeGrid"></div>
   </div>
 
@@ -215,10 +224,14 @@
   // from data already in the schema; none require new columns:
   //   streak       -> profiles.longest_streak (already ratchets up permanently)
   //   total        -> COUNT of the user's mission_completions rows
-  //   session_time -> whether any single completion hit a time_minutes threshold
-  //   comeback     -> gap-detection over the user's completed_date history
+  //   session_time -> tracks the longest single session's time_minutes
+  //   movement_reps/movement_timed -> summed from mission_completions
+  //     joined against exercises.movement_type + exercise_variants
   // Focus (no-skipped-exercises) is deliberately excluded — per-set
   // completion isn't persisted anywhere yet, so it can't be earned honestly.
+  // Comeback was dropped deliberately — rewarding a lapse conflicts with
+  // "collect them all" as a motivator; may return later as a hidden
+  // surprise moment rather than a visible badge slot.
   // ============================================================
   const BADGES = [
     { id: 'first_step',  name: 'First Step',       motto: 'Complete your first mission.',                    type: 'streak',       threshold: 1,   icon: 'target' },
@@ -234,7 +247,61 @@
     { id: 'total_900',   name: '900 Club',         motto: 'Complete 900 missions. You live the mission.',     type: 'total',        threshold: 900, icon: 'bars'   },
     { id: 'time_15',     name: 'Time Invested',    motto: 'Complete a 15-minute session.',                    type: 'session_time', threshold: 15,  icon: 'clock'  },
     { id: 'time_30',     name: 'Time Master',      motto: 'Complete a 30-minute session.',                    type: 'session_time', threshold: 30,  icon: 'clock'  },
-    { id: 'comeback',    name: 'Comeback',         motto: 'Return and complete a mission after missing 3+ days.', type: 'comeback',  icon: 'flag'   }
+
+    // ---- Rep-based movement badges (movement_reps) ----
+    { id: 'mv_push_up_1',   name: 'Push Starter',     motto: 'Complete 100 push-ups in total.',     type: 'movement_reps', movement: 'push_up',   threshold: 100,  icon: 'arm' },
+    { id: 'mv_push_up_2',   name: 'Push Powerhouse',  motto: 'Complete 750 push-ups in total.',     type: 'movement_reps', movement: 'push_up',   threshold: 750,  icon: 'arm' },
+    { id: 'mv_push_up_3',   name: 'Push Legend',      motto: 'Complete 6,000 push-ups in total.',   type: 'movement_reps', movement: 'push_up',   threshold: 6000, icon: 'arm' },
+    { id: 'mv_squat_1',     name: 'Squat Starter',    motto: 'Complete 100 squats in total.',       type: 'movement_reps', movement: 'squat',      threshold: 100,  icon: 'legs' },
+    { id: 'mv_squat_2',     name: 'Squat Powerhouse', motto: 'Complete 750 squats in total.',        type: 'movement_reps', movement: 'squat',      threshold: 750,  icon: 'legs' },
+    { id: 'mv_squat_3',     name: 'Squat Legend',     motto: 'Complete 6,000 squats in total.',      type: 'movement_reps', movement: 'squat',      threshold: 6000, icon: 'legs' },
+    { id: 'mv_calf_1',      name: 'Calf Starter',     motto: 'Complete 50 calf raises in total.',    type: 'movement_reps', movement: 'calf_raise', threshold: 50,   icon: 'legs' },
+    { id: 'mv_calf_2',      name: 'Calf Builder',     motto: 'Complete 400 calf raises in total.',   type: 'movement_reps', movement: 'calf_raise', threshold: 400,  icon: 'legs' },
+    { id: 'mv_calf_3',      name: 'Calf Legend',      motto: 'Complete 3,000 calf raises in total.', type: 'movement_reps', movement: 'calf_raise', threshold: 3000, icon: 'legs' },
+    { id: 'mv_sidebend_1',  name: 'Side Bend Starter', motto: 'Complete 40 side bends in total.',    type: 'movement_reps', movement: 'side_bend', threshold: 40,   icon: 'core' },
+    { id: 'mv_sidebend_2',  name: 'Core Sculptor',     motto: 'Complete 250 side bends in total.',   type: 'movement_reps', movement: 'side_bend', threshold: 250,  icon: 'core' },
+    { id: 'mv_sidebend_3',  name: 'Side Bend Legend',  motto: 'Complete 2,000 side bends in total.', type: 'movement_reps', movement: 'side_bend', threshold: 2000, icon: 'core' },
+    { id: 'mv_bridge_1',    name: 'Bridge Starter',   motto: 'Complete 40 glute bridges in total.',  type: 'movement_reps', movement: 'glute_bridge', threshold: 40,   icon: 'legs' },
+    { id: 'mv_bridge_2',    name: 'Bridge Builder',   motto: 'Complete 250 glute bridges in total.', type: 'movement_reps', movement: 'glute_bridge', threshold: 250,  icon: 'legs' },
+    { id: 'mv_bridge_3',    name: 'Bridge Legend',    motto: 'Complete 2,000 glute bridges in total.', type: 'movement_reps', movement: 'glute_bridge', threshold: 2000, icon: 'legs' },
+    { id: 'mv_kneeraise_1', name: 'Knee Raise Starter', motto: 'Complete 40 knee raises in total.',  type: 'movement_reps', movement: 'knee_raise', threshold: 40,   icon: 'core' },
+    { id: 'mv_kneeraise_2', name: 'Knee Raise Builder', motto: 'Complete 250 knee raises in total.', type: 'movement_reps', movement: 'knee_raise', threshold: 250,  icon: 'core' },
+    { id: 'mv_kneeraise_3', name: 'Knee Raise Legend', motto: 'Complete 2,000 knee raises in total.', type: 'movement_reps', movement: 'knee_raise', threshold: 2000, icon: 'core' },
+    { id: 'mv_shouldertap_1', name: 'Shoulder Tap Starter', motto: 'Complete 30 shoulder taps in total.', type: 'movement_reps', movement: 'shoulder_tap', threshold: 30,   icon: 'arm' },
+    { id: 'mv_shouldertap_2', name: 'Shoulder Tap Builder', motto: 'Complete 200 shoulder taps in total.', type: 'movement_reps', movement: 'shoulder_tap', threshold: 200,  icon: 'arm' },
+    { id: 'mv_shouldertap_3', name: 'Shoulder Tap Legend', motto: 'Complete 1,500 shoulder taps in total.', type: 'movement_reps', movement: 'shoulder_tap', threshold: 1500, icon: 'arm' },
+    { id: 'mv_dip_1',       name: 'Dip Starter',      motto: 'Complete 30 tricep dips in total.',    type: 'movement_reps', movement: 'dip',        threshold: 30,   icon: 'arm' },
+    { id: 'mv_dip_2',       name: 'Dip Builder',      motto: 'Complete 200 tricep dips in total.',   type: 'movement_reps', movement: 'dip',        threshold: 200,  icon: 'arm' },
+    { id: 'mv_dip_3',       name: 'Dip Legend',       motto: 'Complete 1,500 tricep dips in total.', type: 'movement_reps', movement: 'dip',        threshold: 1500, icon: 'arm' },
+    { id: 'mv_lunge_1',     name: 'Lunge Starter',    motto: 'Complete 20 lunges in total.',         type: 'movement_reps', movement: 'lunge',      threshold: 20,   icon: 'legs' },
+    { id: 'mv_lunge_2',     name: 'Lunge Builder',    motto: 'Complete 150 lunges in total.',        type: 'movement_reps', movement: 'lunge',      threshold: 150,  icon: 'legs' },
+    { id: 'mv_lunge_3',     name: 'Lunge Legend',     motto: 'Complete 1,000 lunges in total.',      type: 'movement_reps', movement: 'lunge',      threshold: 1000, icon: 'legs' },
+    { id: 'mv_burpee_1',    name: 'Burpee Starter',   motto: 'Complete 20 burpees in total.',        type: 'movement_reps', movement: 'burpee',     threshold: 20,   icon: 'cardio' },
+    { id: 'mv_burpee_2',    name: 'Burpee Builder',   motto: 'Complete 150 burpees in total.',       type: 'movement_reps', movement: 'burpee',     threshold: 150,  icon: 'cardio' },
+    { id: 'mv_burpee_3',    name: 'Burpee Legend',    motto: 'Complete 1,000 burpees in total.',     type: 'movement_reps', movement: 'burpee',     threshold: 1000, icon: 'cardio' },
+
+    // ---- Timed movement badges (movement_timed, thresholds in seconds) ----
+    { id: 'mv_march_1',     name: 'Warm-Up Warrior',  motto: 'Rack up 30 minutes of marching.',      type: 'movement_timed', movement: 'march',      threshold: 1800,  icon: 'cardio' },
+    { id: 'mv_march_2',     name: 'Power Hour',       motto: 'Rack up 3 hours of marching.',          type: 'movement_timed', movement: 'march',      threshold: 10800, icon: 'cardio' },
+    { id: 'mv_march_3',     name: 'Endless March',    motto: 'Rack up 24 hours of marching.',         type: 'movement_timed', movement: 'march',      threshold: 86400, icon: 'cardio' },
+    { id: 'mv_plank_1',     name: 'Core Starter',     motto: 'Rack up 3 minutes of plank holds.',     type: 'movement_timed', movement: 'plank',      threshold: 180,   icon: 'core' },
+    { id: 'mv_plank_2',     name: 'Iron Core',        motto: 'Rack up 20 minutes of plank holds.',    type: 'movement_timed', movement: 'plank',      threshold: 1200,  icon: 'core' },
+    { id: 'mv_plank_3',     name: 'Unbreakable',      motto: 'Rack up 2.5 hours of plank holds.',     type: 'movement_timed', movement: 'plank',      threshold: 9000,  icon: 'core' },
+    { id: 'mv_squathold_1', name: 'Leg Day Rookie',   motto: 'Rack up 5 minutes of squat holds.',     type: 'movement_timed', movement: 'squat_hold', threshold: 300,   icon: 'legs' },
+    { id: 'mv_squathold_2', name: 'Steel Legs',       motto: 'Rack up 25 minutes of squat holds.',    type: 'movement_timed', movement: 'squat_hold', threshold: 1500,  icon: 'legs' },
+    { id: 'mv_squathold_3', name: 'Foundation of Stone', motto: 'Rack up 3 hours of squat holds.',    type: 'movement_timed', movement: 'squat_hold', threshold: 10800, icon: 'legs' },
+    { id: 'mv_corehold_1',  name: 'Core Hold Starter', motto: 'Rack up 2 minutes of core holds.',     type: 'movement_timed', movement: 'core_hold',  threshold: 120,   icon: 'core' },
+    { id: 'mv_corehold_2',  name: 'Core Hold Builder', motto: 'Rack up 10 minutes of core holds.',    type: 'movement_timed', movement: 'core_hold',  threshold: 600,   icon: 'core' },
+    { id: 'mv_corehold_3',  name: 'Core Hold Legend', motto: 'Rack up 1.5 hours of core holds.',      type: 'movement_timed', movement: 'core_hold',  threshold: 5400,  icon: 'core' },
+    { id: 'mv_steptouch_1', name: 'Step Starter',     motto: 'Rack up 5 minutes of step touches.',    type: 'movement_timed', movement: 'step_touch', threshold: 300,   icon: 'cardio' },
+    { id: 'mv_steptouch_2', name: 'Step Machine',     motto: 'Rack up 40 minutes of step touches.',   type: 'movement_timed', movement: 'step_touch', threshold: 2400,  icon: 'cardio' },
+    { id: 'mv_steptouch_3', name: 'Step Legend',      motto: 'Rack up 5 hours of step touches.',      type: 'movement_timed', movement: 'step_touch', threshold: 18000, icon: 'cardio' },
+    { id: 'mv_stretch_1',   name: 'Flexibility Starter', motto: 'Rack up 3 minutes of stretching.',   type: 'movement_timed', movement: 'stretch',    threshold: 180,   icon: 'calm' },
+    { id: 'mv_stretch_2',   name: 'Flexible Focus',   motto: 'Rack up 20 minutes of stretching.',     type: 'movement_timed', movement: 'stretch',    threshold: 1200,  icon: 'calm' },
+    { id: 'mv_stretch_3',   name: 'Total Flexibility', motto: 'Rack up 2.5 hours of stretching.',     type: 'movement_timed', movement: 'stretch',    threshold: 9000,  icon: 'calm' },
+    { id: 'mv_breathwork_1', name: 'Inner Calm',      motto: 'Rack up 10 minutes of breathwork.',     type: 'movement_timed', movement: 'breathwork', threshold: 600,   icon: 'calm' },
+    { id: 'mv_breathwork_2', name: 'Centered',        motto: 'Rack up 60 minutes of breathwork.',     type: 'movement_timed', movement: 'breathwork', threshold: 3600,  icon: 'calm' },
+    { id: 'mv_breathwork_3', name: 'Enlightened',     motto: 'Rack up 5 hours of breathwork.',        type: 'movement_timed', movement: 'breathwork', threshold: 18000, icon: 'calm' }
   ];
 
   const BADGE_ICONS = {
@@ -244,16 +311,33 @@
     arm:    '<path d="M4 15s1.5-1 4-1 4 2 8 2 4-1 4-1M9 6l3-2.5L15 6M12 3.5V11"/>',
     crown:  '<path d="M4 17h16l-1.5-8-4 3-2.5-5-2.5 5-4-3L4 17z"/>',
     clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2.5"/>',
-    flag:   '<path d="M5 3v18M5 4h11l-2 4 2 4H5"/>'
+    legs:   '<path d="M9 3v6l-2.5 5v7M15 3v6l2.5 5v7M7 9h10"/>',
+    core:   '<path d="M12 3l6 3v6c0 5-3 8-6 9-3-1-6-4-6-9V6l6-3z"/>',
+    cardio: '<path d="M3 12h4l2-7 4 14 2-7h6"/>',
+    calm:   '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'
   };
 
   function isUnlocked(badge, stats) {
     switch (badge.type) {
       case 'streak': return stats.longestStreak >= badge.threshold;
       case 'total': return stats.totalCompletions >= badge.threshold;
-      case 'session_time': return badge.threshold >= 30 ? stats.hasSession30 : stats.hasSession15;
-      case 'comeback': return stats.comebackUnlocked;
+      case 'session_time': return stats.maxSessionMinutes >= badge.threshold;
+      case 'movement_reps': return (stats.movementReps[badge.movement] || 0) >= badge.threshold;
+      case 'movement_timed': return (stats.movementSeconds[badge.movement] || 0) >= badge.threshold;
       default: return false;
+    }
+  }
+
+  // Returns {current, threshold} for badges with a meaningful running total,
+  // or null for ones that don't have one.
+  function getProgress(badge, stats) {
+    switch (badge.type) {
+      case 'streak': return { current: stats.longestStreak, threshold: badge.threshold };
+      case 'total': return { current: stats.totalCompletions, threshold: badge.threshold };
+      case 'session_time': return { current: stats.maxSessionMinutes, threshold: badge.threshold };
+      case 'movement_reps': return { current: stats.movementReps[badge.movement] || 0, threshold: badge.threshold };
+      case 'movement_timed': return { current: stats.movementSeconds[badge.movement] || 0, threshold: badge.threshold };
+      default: return null;
     }
   }
 
@@ -262,15 +346,25 @@
       case 'streak': return `Reach ${badge.threshold} Days`;
       case 'total': return `Complete ${badge.threshold} Missions`;
       case 'session_time': return `Complete a ${badge.threshold}-Min Session`;
-      case 'comeback': return 'Miss 3+ Days, Then Return';
+      case 'movement_reps': return `Reach ${badge.threshold.toLocaleString()} Reps`;
+      case 'movement_timed': {
+        const mins = Math.round(badge.threshold / 60);
+        return mins >= 60 ? `Reach ${(mins / 60).toFixed(1)} Hrs` : `Reach ${mins} Min`;
+      }
       default: return 'Locked';
     }
   }
 
   function renderBadges(stats) {
     const grid = document.getElementById('badgeGrid');
+    let unlockedCount = 0;
     grid.innerHTML = BADGES.map(b => {
       const unlocked = isUnlocked(b, stats);
+      if (unlocked) unlockedCount++;
+      const progress = getProgress(b, stats);
+      const barHtml = progress
+        ? `<div class="badge-progress-track"><div class="badge-progress-fill" style="width:${Math.min(100, (progress.current / progress.threshold) * 100)}%"></div></div>`
+        : '';
       return `
         <div class="badge-card${unlocked ? ' unlocked' : ''}">
           <div class="badge-frame">
@@ -279,15 +373,12 @@
           </div>
           <div class="badge-name">${b.name}</div>
           <div class="badge-motto">${b.motto}</div>
+          ${barHtml}
           <div class="badge-lock-label">${unlocked ? 'Unlocked' : lockLabel(b)}</div>
         </div>
       `;
     }).join('');
-  }
-
-  function parseDateKey(key) {
-    const [y, m, d] = key.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    document.getElementById('badgeCount').textContent = `${unlockedCount} / ${BADGES.length}`;
   }
 
   function loadStreakAndWeek() {
@@ -303,20 +394,26 @@
         }
 
         // Full history in one call — feeds the weekly dots (filtered client-side),
-        // total-completions badges, session-time badges, and comeback detection.
-        // No separate count query needed; this dataset answers all of them.
+        // total-completions badges, and session-time badges.
+        // exercises + exercise_variants are small static tables (28 + 84 rows) —
+        // fetched whole and joined client-side against completions to sum reps/
+        // seconds per movement_type, rather than a complex server-side join.
         return Promise.all([
           withTimeout(client.from('profiles').select('current_streak, longest_streak').eq('id', user.id).single()),
-          withTimeout(client.from('mission_completions').select('completed_date, time_minutes')
+          withTimeout(client.from('mission_completions').select('completed_date, time_minutes, mission_id, tier')
             .eq('user_id', user.id)
-            .order('completed_date', { ascending: true }))
+            .order('completed_date', { ascending: true })),
+          withTimeout(client.from('exercises').select('id, mission_id, movement_type')),
+          withTimeout(client.from('exercise_variants').select('exercise_id, tier, type, sets, reps_per_set, duration_per_set'))
         ]);
       })
       .then(results => {
         if (!results) return; // redirected to login above
-        const [profileResult, historyResult] = results;
+        const [profileResult, historyResult, exercisesResult, variantsResult] = results;
         if (profileResult.error) throw profileResult.error;
         if (historyResult.error) throw historyResult.error;
+        if (exercisesResult.error) throw exercisesResult.error;
+        if (variantsResult.error) throw variantsResult.error;
 
         const streak = (profileResult.data && profileResult.data.current_streak) || 0;
         const longestStreak = (profileResult.data && profileResult.data.longest_streak) || 0;
@@ -329,20 +426,29 @@
 
         // ---- Derive badge stats from the same history fetch ----
         const totalCompletions = history.length;
-        const hasSession15 = history.some(row => row.time_minutes >= 15);
-        const hasSession30 = history.some(row => row.time_minutes >= 30);
+        const maxSessionMinutes = history.reduce((max, row) => Math.max(max, row.time_minutes || 0), 0);
 
-        // Comeback: walk consecutive completions looking for a gap of 3+
-        // full missed days between two logged dates.
-        let comebackUnlocked = false;
-        for (let i = 1; i < history.length; i++) {
-          const prev = parseDateKey(history[i - 1].completed_date);
-          const curr = parseDateKey(history[i].completed_date);
-          const gapDays = Math.round((curr - prev) / 86400000) - 1; // days missed in between
-          if (gapDays >= 3) { comebackUnlocked = true; break; }
-        }
+        // ---- Sum reps/seconds per movement_type across every completion ----
+        const exercises = exercisesResult.data || [];
+        const variants = variantsResult.data || [];
+        const movementReps = {};
+        const movementSeconds = {};
 
-        renderBadges({ longestStreak, totalCompletions, hasSession15, hasSession30, comebackUnlocked });
+        history.forEach(completion => {
+          exercises
+            .filter(ex => ex.mission_id === completion.mission_id && ex.movement_type)
+            .forEach(ex => {
+              const variant = variants.find(v => v.exercise_id === ex.id && v.tier === completion.tier);
+              if (!variant) return;
+              if (variant.type === 'reps') {
+                movementReps[ex.movement_type] = (movementReps[ex.movement_type] || 0) + variant.sets * (variant.reps_per_set || 0);
+              } else if (variant.type === 'timed') {
+                movementSeconds[ex.movement_type] = (movementSeconds[ex.movement_type] || 0) + variant.sets * (variant.duration_per_set || 0);
+              }
+            });
+        });
+
+        renderBadges({ longestStreak, totalCompletions, maxSessionMinutes, movementReps, movementSeconds });
 
         const now = new Date();
         const todayDow = now.getDay();
