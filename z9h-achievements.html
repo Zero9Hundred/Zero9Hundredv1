@@ -211,30 +211,66 @@
   }
 
   // ============================================================
-  // MILESTONE BADGES — Phase 1, streak-only. Every threshold reads
-  // straight off profiles.longest_streak, which already exists,
-  // already ratchets up permanently, and is untouched by undo — so
-  // no new schema, no new writes, just a comparison against a number
-  // already being fetched below.
+  // MILESTONE BADGES — 14 total across 4 tracking types. All read
+  // from data already in the schema; none require new columns:
+  //   streak       -> profiles.longest_streak (already ratchets up permanently)
+  //   total        -> COUNT of the user's mission_completions rows
+  //   session_time -> whether any single completion hit a time_minutes threshold
+  //   comeback     -> gap-detection over the user's completed_date history
+  // Focus (no-skipped-exercises) is deliberately excluded — per-set
+  // completion isn't persisted anywhere yet, so it can't be earned honestly.
   // ============================================================
   const BADGES = [
-    { id: 'first_step', name: 'First Step',    motto: 'Complete your first mission.',                threshold: 1,   icon: 'target' },
-    { id: 'streak_7',   name: '7 Day Streak',  motto: 'A week of discipline. The habit is built.',    threshold: 7,   icon: 'flame'  },
-    { id: 'streak_14',  name: '14 Day Streak', motto: 'Two weeks of focus. Keep pushing.',             threshold: 14,  icon: 'flame'  },
-    { id: 'streak_30',  name: '30 Day Streak', motto: 'A month of consistency. You\u2019re levelling up.', threshold: 30, icon: 'flame' },
-    { id: 'streak_60',  name: '60 Day Streak', motto: 'Two months strong. Unstoppable.',               threshold: 60,  icon: 'flame'  },
-    { id: 'streak_100', name: '100 Day Streak', motto: 'A true milestone. You\u2019re elite.',          threshold: 100, icon: 'flame'  }
+    { id: 'first_step',  name: 'First Step',       motto: 'Complete your first mission.',                    type: 'streak',       threshold: 1,   icon: 'target' },
+    { id: 'streak_7',    name: '7 Day Streak',     motto: 'A week of discipline. The habit is built.',       type: 'streak',       threshold: 7,   icon: 'flame'  },
+    { id: 'streak_14',   name: '14 Day Streak',    motto: 'Two weeks of focus. Keep pushing.',                type: 'streak',       threshold: 14,  icon: 'flame'  },
+    { id: 'streak_30',   name: 'Disciplined',      motto: 'A month of consistency. You\u2019re levelling up.', type: 'streak',      threshold: 30,  icon: 'flame'  },
+    { id: 'streak_60',   name: 'Built Different',  motto: 'Two months strong. Unstoppable.',                  type: 'streak',       threshold: 60,  icon: 'flame'  },
+    { id: 'streak_100',  name: 'Unstoppable',      motto: 'A true milestone. You\u2019re elite.',              type: 'streak',       threshold: 100, icon: 'flame'  },
+    { id: 'streak_365',  name: 'Elite Discipline', motto: '365 days in a row. You live the mission.',         type: 'streak',       threshold: 365, icon: 'flame'  },
+    { id: 'total_10',    name: 'Consistent',       motto: 'Complete 10 missions in total.',                   type: 'total',        threshold: 10,  icon: 'bars'   },
+    { id: 'total_25',    name: 'Strength Builder', motto: 'Complete 25 missions in total.',                   type: 'total',        threshold: 25,  icon: 'arm'    },
+    { id: 'total_150',   name: 'Calisthenics King', motto: 'Complete 150 missions in total.',                 type: 'total',        threshold: 150, icon: 'crown'  },
+    { id: 'total_900',   name: '900 Club',         motto: 'Complete 900 missions. You live the mission.',     type: 'total',        threshold: 900, icon: 'bars'   },
+    { id: 'time_15',     name: 'Time Invested',    motto: 'Complete a 15-minute session.',                    type: 'session_time', threshold: 15,  icon: 'clock'  },
+    { id: 'time_30',     name: 'Time Master',      motto: 'Complete a 30-minute session.',                    type: 'session_time', threshold: 30,  icon: 'clock'  },
+    { id: 'comeback',    name: 'Comeback',         motto: 'Return and complete a mission after missing 3+ days.', type: 'comeback',  icon: 'flag'   }
   ];
 
   const BADGE_ICONS = {
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
-    flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>'
+    flame:  '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    bars:   '<path d="M6 20v-6M12 20V8M18 20v-11"/>',
+    arm:    '<path d="M4 15s1.5-1 4-1 4 2 8 2 4-1 4-1M9 6l3-2.5L15 6M12 3.5V11"/>',
+    crown:  '<path d="M4 17h16l-1.5-8-4 3-2.5-5-2.5 5-4-3L4 17z"/>',
+    clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2.5"/>',
+    flag:   '<path d="M5 3v18M5 4h11l-2 4 2 4H5"/>'
   };
 
-  function renderBadges(longestStreak) {
+  function isUnlocked(badge, stats) {
+    switch (badge.type) {
+      case 'streak': return stats.longestStreak >= badge.threshold;
+      case 'total': return stats.totalCompletions >= badge.threshold;
+      case 'session_time': return badge.threshold >= 30 ? stats.hasSession30 : stats.hasSession15;
+      case 'comeback': return stats.comebackUnlocked;
+      default: return false;
+    }
+  }
+
+  function lockLabel(badge) {
+    switch (badge.type) {
+      case 'streak': return `Reach ${badge.threshold} Days`;
+      case 'total': return `Complete ${badge.threshold} Missions`;
+      case 'session_time': return `Complete a ${badge.threshold}-Min Session`;
+      case 'comeback': return 'Miss 3+ Days, Then Return';
+      default: return 'Locked';
+    }
+  }
+
+  function renderBadges(stats) {
     const grid = document.getElementById('badgeGrid');
     grid.innerHTML = BADGES.map(b => {
-      const unlocked = longestStreak >= b.threshold;
+      const unlocked = isUnlocked(b, stats);
       return `
         <div class="badge-card${unlocked ? ' unlocked' : ''}">
           <div class="badge-frame">
@@ -243,10 +279,15 @@
           </div>
           <div class="badge-name">${b.name}</div>
           <div class="badge-motto">${b.motto}</div>
-          <div class="badge-lock-label">${unlocked ? 'Unlocked' : `Reach ${b.threshold} Days`}</div>
+          <div class="badge-lock-label">${unlocked ? 'Unlocked' : lockLabel(b)}</div>
         </div>
       `;
     }).join('');
+  }
+
+  function parseDateKey(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
 
   function loadStreakAndWeek() {
@@ -261,37 +302,47 @@
           return null;
         }
 
-        const now = new Date();
-        const todayDow = now.getDay();
-        const mondayOffset = todayDow === 0 ? -6 : 1 - todayDow;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() + mondayOffset);
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-
+        // Full history in one call — feeds the weekly dots (filtered client-side),
+        // total-completions badges, session-time badges, and comeback detection.
+        // No separate count query needed; this dataset answers all of them.
         return Promise.all([
           withTimeout(client.from('profiles').select('current_streak, longest_streak').eq('id', user.id).single()),
-          withTimeout(client.from('mission_completions').select('completed_date')
+          withTimeout(client.from('mission_completions').select('completed_date, time_minutes')
             .eq('user_id', user.id)
-            .gte('completed_date', dateKey(monday))
-            .lte('completed_date', dateKey(sunday)))
+            .order('completed_date', { ascending: true }))
         ]);
       })
       .then(results => {
         if (!results) return; // redirected to login above
-        const [profileResult, weekResult] = results;
+        const [profileResult, historyResult] = results;
         if (profileResult.error) throw profileResult.error;
-        if (weekResult.error) throw weekResult.error;
+        if (historyResult.error) throw historyResult.error;
 
         const streak = (profileResult.data && profileResult.data.current_streak) || 0;
         const longestStreak = (profileResult.data && profileResult.data.longest_streak) || 0;
-        const completedDates = new Set((weekResult.data || []).map(row => row.completed_date));
+        const history = historyResult.data || [];
+        const completedDates = new Set(history.map(row => row.completed_date));
 
         document.getElementById('streakNum').textContent = streak;
         document.getElementById('streakMsg').textContent =
           streak > 0 ? 'Discipline compounds daily.' : 'Complete a mission to start your streak.';
 
-        renderBadges(longestStreak);
+        // ---- Derive badge stats from the same history fetch ----
+        const totalCompletions = history.length;
+        const hasSession15 = history.some(row => row.time_minutes >= 15);
+        const hasSession30 = history.some(row => row.time_minutes >= 30);
+
+        // Comeback: walk consecutive completions looking for a gap of 3+
+        // full missed days between two logged dates.
+        let comebackUnlocked = false;
+        for (let i = 1; i < history.length; i++) {
+          const prev = parseDateKey(history[i - 1].completed_date);
+          const curr = parseDateKey(history[i].completed_date);
+          const gapDays = Math.round((curr - prev) / 86400000) - 1; // days missed in between
+          if (gapDays >= 3) { comebackUnlocked = true; break; }
+        }
+
+        renderBadges({ longestStreak, totalCompletions, hasSession15, hasSession30, comebackUnlocked });
 
         const now = new Date();
         const todayDow = now.getDay();
