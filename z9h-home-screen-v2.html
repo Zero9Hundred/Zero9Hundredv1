@@ -327,8 +327,10 @@
     var label = document.getElementById('startBtnLabel');
     if (!btn || !label) return;
     btn.classList.add('confirmed');
-    btn.disabled = true;
-    label.textContent = 'Mission Complete';
+    // Deliberately NOT disabled — repeats are allowed now. Tapping again
+    // just re-runs the normal Start Mission flow below with whatever
+    // tier/time is currently selected, and logs a second completion.
+    label.textContent = 'Mission Complete \u2014 Log Another?';
   }
 
   function checkTodayStatus(retries) {
@@ -354,10 +356,10 @@
         return withTimeout(client.from('mission_completions').select('id')
           .eq('user_id', user.id)
           .eq('completed_date', dateKey(new Date()))
-          .maybeSingle());
+          .limit(1));
       })
       .then(function (result) {
-        if (result && result.data) markStartBtnComplete();
+        if (result && result.data && result.data.length > 0) markStartBtnComplete();
       })
       .catch(function (err) {
         console.warn('Could not check today\'s completion status:', err.message);

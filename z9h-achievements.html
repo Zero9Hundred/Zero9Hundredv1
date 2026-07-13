@@ -223,7 +223,8 @@
   // MILESTONE BADGES — 14 total across 4 tracking types. All read
   // from data already in the schema; none require new columns:
   //   streak       -> profiles.longest_streak (already ratchets up permanently)
-  //   total        -> COUNT of the user's mission_completions rows
+  //   total        -> COUNT of unique days with a completion (not raw
+  //                    row count — repeat same-day sessions don't inflate this)
   //   session_time -> tracks the longest single session's time_minutes
   //   movement_reps/movement_timed -> summed from mission_completions
   //     joined against exercises.movement_type + exercise_variants
@@ -425,7 +426,12 @@
           streak > 0 ? 'Discipline compounds daily.' : 'Complete a mission to start your streak.';
 
         // ---- Derive badge stats from the same history fetch ----
-        const totalCompletions = history.length;
+        // Unique DAYS trained, not row count — deliberate, now that repeat
+        // sessions on the same day are allowed. Without this, a highly
+        // motivated week would blow through 900 Club's multi-year pacing
+        // in weeks. Reps/seconds badges below still count every session,
+        // including repeats — that distinction is the whole point.
+        const totalCompletions = new Set(history.map(row => row.completed_date)).size;
         const maxSessionMinutes = history.reduce((max, row) => Math.max(max, row.time_minutes || 0), 0);
 
         // ---- Sum reps/seconds per movement_type across every completion ----

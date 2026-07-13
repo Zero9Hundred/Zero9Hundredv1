@@ -99,6 +99,18 @@
   .sheet-date-row{ display:flex; align-items:center; gap:7px; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--path-accent); font-weight:700; margin-bottom:10px; }
   .sheet-date-row svg{ width:14px; height:14px; flex-shrink:0; }
   .sheet-mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:22px; color:var(--text); margin-bottom:18px; }
+
+  .sheet-sessions-label{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-bottom:8px; }
+  .sheet-sessions-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .sheet-sessions-empty{ font-size:11.5px; color:var(--text-faint); margin-bottom:18px; }
+  .sheet-session-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--surface-alt); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .sheet-session-info{ display:flex; flex-direction:column; gap:2px; }
+  .sheet-session-title{ font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; color:var(--text); }
+  .sheet-session-meta{ font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.3px; }
+  .sheet-session-undo{ width:28px; height:28px; border-radius:50%; background:transparent; border:1px solid #FF5C5C; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; padding:0; transition:opacity 0.15s ease; }
+  .sheet-session-undo:active{ opacity:0.7; }
+  .sheet-session-undo svg{ width:12px; height:12px; stroke:#FF8080; }
+
   .sheet-exercise-list{ display:flex; flex-direction:column; gap:9px; margin-bottom:20px; }
   .sheet-ex-card{ background:var(--surface-alt); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
   .sheet-ex-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
@@ -116,7 +128,6 @@
   .sheet-action-btn:active{ opacity:0.8; }
   .sheet-action-btn:disabled{ opacity:0.4; cursor:default; }
   .sheet-action-btn.pending{ background:var(--path-accent); color:var(--bg); }
-  .sheet-action-btn.done{ background:color-mix(in srgb, #FF5C5C 18%, var(--surface-alt)); color:#FF8080; border:1px solid #FF5C5C; }
   .sheet-action-btn svg{ width:16px; height:16px; flex-shrink:0; }
 </style>
 </head>
@@ -159,7 +170,7 @@
       <div class="legend-item"><span class="legend-swatch future"></span>Locked</div>
     </div>
 
-    <p class="hint">Tap any past date to see that day's mission and mark it complete or undo it. Future dates are locked — no logging ahead of time.</p>
+    <p class="hint">Tap any date to see that day's sessions. Log a missed session, add another on top of one you've already done, or undo any individual session. Future dates are locked — no logging ahead of time.</p>
   </div>
 
 </div>
@@ -173,6 +184,9 @@
       <span id="sheetDateLabel">PAST — TUESDAY, 7 JUL 2026</span>
     </div>
     <div class="sheet-mission-title" id="sheetMissionTitle">Upper Body Push</div>
+    <div class="sheet-sessions-label" id="sheetSessionsLabel">Logged Sessions</div>
+    <div class="sheet-sessions-list" id="sheetSessionsList"></div>
+    <div class="sheet-sessions-label">Mission Reference</div>
     <div class="sheet-exercise-list" id="sheetExerciseList"></div>
     <button class="sheet-action-btn" id="sheetActionBtn" type="button"></button>
   </div>
@@ -267,8 +281,14 @@
 
   function isSameMonth(y, m) { return y === today.getFullYear() && m === today.getMonth(); }
 
-  function buildGrid(completedDates) {
+  function buildGrid(sessionRows) {
     dayGrid.innerHTML = '';
+
+    // Unique days for the grid's done/pending state; raw row count (including
+    // repeats) for the "Sessions This Month" stat — deliberately different
+    // from the badge system's unique-day counting, since this stat is meant
+    // to reflect actual effort logged, repeats included.
+    const completedDates = new Set(sessionRows.map(row => row.completed_date));
 
     const firstOfMonth = new Date(viewYear, viewMonth, 1);
     const leadingBlanks = firstOfMonth.getDay(); // 0 = Sunday
@@ -298,17 +318,17 @@
       } else if (isDone) {
         cell.className = 'cal-cell done';
         cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, completed. Tap to view`);
-        cell.addEventListener('click', () => openSheet(cellDate, key, true));
+        cell.addEventListener('click', () => openSheet(cellDate, key));
       } else {
         cell.className = 'cal-cell pending' + (isToday ? ' today' : '');
         cell.setAttribute('aria-label', `${MONTH_NAMES[viewMonth]} ${day}, tap to view and mark complete`);
-        cell.addEventListener('click', () => openSheet(cellDate, key, false));
+        cell.addEventListener('click', () => openSheet(cellDate, key));
       }
 
       dayGrid.appendChild(cell);
     }
 
-    statSessions.textContent = completedDates.size;
+    statSessions.textContent = sessionRows.length;
   }
 
   // ============================================================
@@ -326,37 +346,40 @@
   const sheetMissionTitle = document.getElementById('sheetMissionTitle');
   const sheetExerciseList = document.getElementById('sheetExerciseList');
   const sheetActionBtn = document.getElementById('sheetActionBtn');
+  const sheetSessionsList = document.getElementById('sheetSessionsList');
+  const sheetSessionsLabel = document.getElementById('sheetSessionsLabel');
 
-  let sheetState = null; // { cellDate, key, isDone, mission }
+  let sheetState = null; // { cellDate, key, mission }
 
   function formatVolume(ex) {
     if (ex.type === 'timed') return `${ex.sets}\u00D7${ex.duration_per_set}s`;
     return `${ex.sets}\u00D7${ex.reps_per_set}`;
   }
 
-  function setSheetActionState(isDone) {
+  // Action button now always inserts — undo lives per-row in the
+  // session list below instead. Label just reflects whether this would
+  // be the first session logged for the day or an additional one.
+  function setSheetActionLabel(sessionCount) {
     sheetActionBtn.disabled = false;
-    if (isDone) {
-      sheetActionBtn.className = 'sheet-action-btn done';
-      sheetActionBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9M3 12l4-4M3 12l4 4"/></svg> Completed — Tap to Undo';
-    } else {
-      sheetActionBtn.className = 'sheet-action-btn pending';
-      sheetActionBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark as Complete';
-    }
+    sheetActionBtn.className = 'sheet-action-btn pending';
+    const label = sessionCount > 0 ? 'Log Another Session' : 'Mark as Complete';
+    sheetActionBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${label}`;
   }
 
-  function openSheet(cellDate, key, isDone) {
+  function openSheet(cellDate, key) {
     const dow = cellDate.getDay();
     const mission = missionsByDow[dow];
     const isToday = cellDate.getTime() === today.getTime();
 
-    sheetState = { cellDate, key, isDone, mission };
+    sheetState = { cellDate, key, mission };
     sheetDateLabel.textContent = `${isToday ? 'TODAY' : 'PAST'} \u2014 ${WEEKDAY_NAMES[dow]}, ${cellDate.getDate()} ${MONTH_ABBR[cellDate.getMonth()]} ${cellDate.getFullYear()}`;
-    sheetExerciseList.innerHTML = '<div class="sheet-empty">Loading\u2026</div>';
+    sheetSessionsList.innerHTML = '<div class="sheet-sessions-empty">Loading\u2026</div>';
+    sheetExerciseList.innerHTML = '';
     sheetOverlay.classList.add('open');
 
     if (!mission) {
       sheetMissionTitle.textContent = 'No Mission Content';
+      sheetSessionsList.innerHTML = '';
       sheetExerciseList.innerHTML = '<div class="sheet-empty">This path doesn\u2019t have content for this day yet.</div>';
       sheetActionBtn.disabled = true;
       sheetActionBtn.className = 'sheet-action-btn pending';
@@ -365,7 +388,7 @@
     }
 
     sheetMissionTitle.textContent = mission.title || 'Mission';
-    setSheetActionState(isDone);
+    loadSessionsForDate(key);
 
     const cacheKey = `${mission.id}:${defaultTier}`;
     if (exerciseCache[cacheKey]) {
@@ -391,6 +414,48 @@
         console.warn('Failed to load exercises for sheet:', err.message);
         sheetExerciseList.innerHTML = '<div class="sheet-empty">Could not load exercises.</div>';
       });
+  }
+
+  function loadSessionsForDate(key) {
+    withTimeout(client.from('mission_completions').select('id, tier, time_minutes')
+      .eq('user_id', currentUser.id)
+      .eq('completed_date', key)
+      .order('created_at', { ascending: true }))
+      .then(result => {
+        if (result.error) throw result.error;
+        renderSessionsList(result.data || []);
+      })
+      .catch(err => {
+        console.warn('Failed to load sessions for date:', err.message);
+        sheetSessionsList.innerHTML = '<div class="sheet-sessions-empty">Could not load sessions.</div>';
+      });
+  }
+
+  function renderSessionsList(sessions) {
+    setSheetActionLabel(sessions.length);
+
+    if (!sessions.length) {
+      sheetSessionsList.innerHTML = '';
+      sheetSessionsLabel.style.display = 'none';
+      return;
+    }
+
+    sheetSessionsLabel.style.display = 'block';
+    sheetSessionsList.innerHTML = sessions.map((s, i) => `
+      <div class="sheet-session-row">
+        <div class="sheet-session-info">
+          <span class="sheet-session-title">Session ${i + 1}</span>
+          <span class="sheet-session-meta">${s.tier} \u00B7 ${s.time_minutes} min</span>
+        </div>
+        <button class="sheet-session-undo" type="button" data-id="${s.id}" aria-label="Undo this session">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    `).join('');
+
+    sheetSessionsList.querySelectorAll('.sheet-session-undo').forEach(btn => {
+      btn.addEventListener('click', () => undoSession(btn.getAttribute('data-id'), btn));
+    });
   }
 
   function renderSheetExercises(list) {
@@ -424,7 +489,7 @@
   sheetActionBtn.addEventListener('click', () => {
     if (!sheetState || !sheetState.mission || sheetActionBtn.disabled) return;
     sheetActionBtn.disabled = true;
-    sheetState.isDone ? unmarkComplete() : markComplete();
+    markComplete();
   });
 
   function markComplete() {
@@ -440,13 +505,12 @@
 
     withTimeout(client.from('mission_completions').insert(row))
       .then(result => {
-        if (result.error && result.error.code !== '23505') throw result.error; // 23505 = already logged that day
+        if (result.error) throw result.error;
         return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
       })
       .then(profileResult => {
         if (profileResult && !profileResult.error) statStreak.textContent = profileResult.data.current_streak;
-        sheetState.isDone = true;
-        setSheetActionState(true);
+        loadSessionsForDate(key);
         renderMonth();
       })
       .catch(err => {
@@ -456,27 +520,25 @@
       });
   }
 
-  function unmarkComplete() {
-    const { key } = sheetState;
+  function undoSession(sessionId, btnEl) {
+    btnEl.disabled = true;
+    btnEl.style.opacity = '0.5';
 
-    withTimeout(client.from('mission_completions').delete()
-      .eq('user_id', currentUser.id)
-      .eq('completed_date', key))
+    withTimeout(client.from('mission_completions').delete().eq('id', sessionId))
       .then(result => {
         if (result.error) throw result.error;
         return withTimeout(client.from('profiles').select('current_streak').eq('id', currentUser.id).single());
       })
       .then(profileResult => {
         if (profileResult && !profileResult.error) statStreak.textContent = profileResult.data.current_streak;
-        sheetState.isDone = false;
-        setSheetActionState(false);
+        loadSessionsForDate(sheetState.key);
         renderMonth();
       })
       .catch(err => {
         console.warn('Undo failed:', err.message);
-        sheetActionBtn.disabled = false;
+        btnEl.disabled = false;
+        btnEl.style.opacity = '';
         // Most likely cause: the DELETE policy/trigger add-on hasn't been run yet.
-        sheetActionBtn.textContent = 'Could not undo \u2014 try again';
       });
   }
 
@@ -493,11 +555,11 @@
       .lte('completed_date', dateKey(lastOfMonth)))
       .then(result => {
         if (result.error) throw result.error;
-        buildGrid(new Set((result.data || []).map(row => row.completed_date)));
+        buildGrid(result.data || []);
       })
       .catch(err => {
         console.warn('Failed to load month completions:', err.message);
-        buildGrid(new Set());
+        buildGrid([]);
       });
   }
 

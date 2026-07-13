@@ -201,8 +201,9 @@
 
   // If today's mission is already logged (e.g. the person completed it,
   // navigated away, and came back), reflect that immediately instead of
-  // showing a fresh "Mark Complete" button that would just hit the
-  // (user_id, completed_date) unique constraint on a second tap.
+  // showing a fresh "Mark Complete" button. Now that repeats are allowed,
+  // this uses .limit(1) rather than .maybeSingle() — .maybeSingle() would
+  // throw once a second same-day row exists, since it expects at most one.
   function checkTodayStatus(client) {
     if (completeBtn.disabled) return; // already disabled by the no-session state below
     withTimeout(client.auth.getSession())
@@ -213,13 +214,11 @@
         return withTimeout(client.from('mission_completions').select('id')
           .eq('user_id', user.id)
           .eq('completed_date', dateKey(new Date()))
-          .maybeSingle());
+          .limit(1));
       })
       .then(result => {
-        if (result && result.data) {
-          completeBtn.classList.add('confirmed');
-          completeBtn.disabled = true;
-          completeBtnLabel.textContent = 'Mission Complete';
+        if (result && result.data && result.data.length > 0) {
+          setCompletedState();
         }
       })
       .catch(err => console.warn("Could not check today's completion status:", err.message));
@@ -291,8 +290,38 @@
     window.location.href = 'z9h-home-screen-v2.html';
   });
 
+  // ============================================================
+  // TWO-STATE COMPLETE BUTTON — now that repeats are allowed:
+  //   pending   -> "Mark Complete" (blue), tapping inserts a row
+  //   completed -> "Completed — Do Another Session" (green), tapping
+  //                flips back to pending WITHOUT writing anything —
+  //                the second write only happens if they then tap
+  //                Mark Complete again. Reuses the same session data
+  //                (same tier/time already chosen) per the "less
+  //                friction" call on repeats.
+  // ============================================================
+  function setPendingState() {
+    completeBtn.classList.remove('confirmed');
+    completeBtn.disabled = false;
+    completeBtnLabel.textContent = 'Mark Complete';
+  }
+
+  function setCompletedState() {
+    completeBtn.classList.add('confirmed');
+    completeBtn.disabled = false;
+    completeBtnLabel.textContent = 'Completed \u2014 Do Another Session';
+  }
+
   completeBtn.addEventListener('click', () => {
     if (completeBtn.disabled) return;
+
+    // If we're currently showing the "completed" state, this tap just
+    // unlocks another round — no server call yet.
+    if (completeBtn.classList.contains('confirmed')) {
+      setPendingState();
+      return;
+    }
+
     completeBtn.disabled = true;
     completeBtnLabel.textContent = 'Saving\u2026';
 
@@ -323,20 +352,8 @@
         return withTimeout(client.from('mission_completions').insert(row));
       })
       .then(result => {
-        if (result.error) {
-          // 23505 = unique_violation on (user_id, completed_date) — they've
-          // already logged today. Not a failure from the user's point of view.
-          if (result.error.code === '23505') {
-            console.log('Already completed today — treating as success.');
-          } else {
-            throw result.error;
-          }
-        }
-        completeBtn.classList.add('confirmed');
-        completeBtnLabel.textContent = 'Mission Complete';
-        setTimeout(() => {
-          window.location.href = 'z9h-home-screen-v2.html';
-        }, 900);
+        if (result.error) throw result.error;
+        setCompletedState();
       })
       .catch(err => {
         console.warn('Mark Complete failed:', err.message);
