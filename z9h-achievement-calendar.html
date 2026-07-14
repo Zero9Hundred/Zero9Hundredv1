@@ -96,9 +96,10 @@
   }
   .sheet-overlay.open .sheet{ transform:translateY(0); }
   .sheet-handle{ width:36px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 18px auto; }
-  .sheet-date-row{ display:flex; align-items:center; gap:7px; font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--path-accent); font-weight:700; margin-bottom:10px; }
-  .sheet-date-row svg{ width:14px; height:14px; flex-shrink:0; }
-  .sheet-mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:22px; color:var(--text); margin-bottom:18px; }
+  .sheet-title-row{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:16px; }
+  .sheet-mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:21px; color:var(--text); line-height:1.15; min-width:0; }
+  .sheet-date-badge{ display:flex; align-items:center; gap:5px; font-size:9.5px; letter-spacing:0.6px; text-transform:uppercase; color:var(--path-accent); font-weight:700; white-space:nowrap; flex-shrink:0; }
+  .sheet-date-badge svg{ width:12px; height:12px; flex-shrink:0; }
 
   .sheet-selector-block{ margin-bottom:14px; }
   .sheet-selector-label{ display:block; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-bottom:8px; }
@@ -206,11 +207,13 @@
 <div class="sheet-overlay" id="sheetOverlay">
   <div class="sheet" id="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-date-row">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-      <span id="sheetDateLabel">PAST — TUESDAY, 7 JUL 2026</span>
+    <div class="sheet-title-row">
+      <div class="sheet-mission-title" id="sheetMissionTitle">Upper Body Push</div>
+      <div class="sheet-date-badge" id="sheetDateBadge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        <span id="sheetDateLabel">TUE 7 JUL</span>
+      </div>
     </div>
-    <div class="sheet-mission-title" id="sheetMissionTitle">Upper Body Push</div>
 
     <div class="sheet-selector-block">
       <span class="sheet-selector-label">Training Tier</span>
@@ -458,7 +461,8 @@
     const isToday = cellDate.getTime() === today.getTime();
 
     sheetState = { cellDate, key, mission };
-    sheetDateLabel.textContent = `${isToday ? 'TODAY' : 'PAST'} \u2014 ${WEEKDAY_NAMES[dow]}, ${cellDate.getDate()} ${MONTH_ABBR[cellDate.getMonth()]} ${cellDate.getFullYear()}`;
+    sheetDateLabel.textContent = isToday ? 'TODAY' : `${WEEKDAY_NAMES[dow].slice(0, 3)} ${cellDate.getDate()} ${MONTH_ABBR[cellDate.getMonth()]}`;
+    sheetSessionsList.style.display = 'flex';
     sheetSessionsList.innerHTML = '<div class="sheet-sessions-empty">Loading\u2026</div>';
     sheetExerciseList.innerHTML = '';
     resetSheetSelectors();
@@ -467,6 +471,8 @@
     if (!mission) {
       sheetMissionTitle.textContent = 'No Mission Content';
       sheetSessionsList.innerHTML = '';
+      sheetSessionsList.style.display = 'none';
+      sheetSessionsLabel.style.display = 'none';
       sheetExerciseList.innerHTML = '<div class="sheet-empty">This path doesn\u2019t have content for this day yet.</div>';
       sheetActionBtn.disabled = true;
       sheetActionBtn.className = 'sheet-action-btn pending';
@@ -528,10 +534,12 @@
 
     if (!sessions.length) {
       sheetSessionsList.innerHTML = '';
+      sheetSessionsList.style.display = 'none';
       sheetSessionsLabel.style.display = 'none';
       return;
     }
 
+    sheetSessionsList.style.display = 'flex';
     sheetSessionsLabel.style.display = 'block';
     sheetSessionsList.innerHTML = sessions.map((s, i) => `
       <div class="sheet-session-row">
