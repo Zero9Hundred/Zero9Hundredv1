@@ -426,8 +426,43 @@
       sheetTimeRow.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       sheetSelectedTime = pill.getAttribute('data-time');
+      if (sheetState && sheetState.mission) {
+        const cacheKey = `${sheetState.mission.id}:${sheetSelectedTier}`;
+        if (exerciseCache[cacheKey]) applyTimeAndRender(exerciseCache[cacheKey]);
+      }
     });
   });
+
+  // Derives 30/45-min versions from the authored 15-min baseline — same
+  // rule as Home Console's scaleExercise(), ported here so the reference
+  // list actually reflects the selected time, not just the selected tier.
+  // 5/10 min slice the baseline to fewer exercises rather than scaling down.
+  function scaleExercise(base, timeMinutes) {
+    const steps = { 15: 0, 30: 1, 45: 2 }[timeMinutes] || 0;
+    if (steps === 0) return base;
+    const scaled = { ...base, sets: base.sets + steps };
+    if (base.type === 'reps') {
+      scaled.reps_per_set = base.reps_per_set + (steps * 2);
+    } else {
+      scaled.duration_per_set = base.duration_per_set + (steps * 5);
+    }
+    return scaled;
+  }
+
+  const SHORT_SESSION_EXERCISE_COUNT = { 5: 1, 10: 2 };
+
+  function applyTimeAndRender(baselineList) {
+    if (!baselineList) return;
+    const timeMinutes = Number(sheetSelectedTime);
+    let list;
+    if (timeMinutes === 15 || timeMinutes === 30 || timeMinutes === 45) {
+      list = baselineList.map(ex => scaleExercise(ex, timeMinutes));
+    } else {
+      const count = SHORT_SESSION_EXERCISE_COUNT[timeMinutes] || baselineList.length;
+      list = baselineList.slice(0, count);
+    }
+    renderSheetExercises(list);
+  }
 
   function formatVolume(ex) {
     if (ex.type === 'timed') return `${ex.sets}\u00D7${ex.duration_per_set}s`;
@@ -488,7 +523,7 @@
   function loadSheetExercises(mission, tier) {
     const cacheKey = `${mission.id}:${tier}`;
     if (exerciseCache[cacheKey]) {
-      renderSheetExercises(exerciseCache[cacheKey]);
+      applyTimeAndRender(exerciseCache[cacheKey]);
       return;
     }
 
@@ -506,7 +541,7 @@
           return variant;
         }).filter(Boolean);
         exerciseCache[cacheKey] = list;
-        renderSheetExercises(list);
+        applyTimeAndRender(list);
       })
       .catch(err => {
         console.warn('Failed to load exercises for sheet:', err.message);
