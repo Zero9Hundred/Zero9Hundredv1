@@ -246,12 +246,31 @@
     document.getElementById('totalMinutes').textContent = totalMinutes.toLocaleString();
 
     const totalSessions = rows.length;
+    const tierOrder = ['foundation', 'standard', 'advanced'];
     const tiers = { foundation: 0, standard: 0, advanced: 0 };
     rows.forEach(r => { if (tiers.hasOwnProperty(r.tier)) tiers[r.tier]++; });
 
-    ['foundation', 'standard', 'advanced'].forEach(tier => {
+    // Largest-remainder method — rounding each tier's percentage independently
+    // (Math.round on each) can push the total past 100% whenever two or more
+    // values round up at once (e.g. 87.5% and 12.5% both round up to 88+13=101).
+    // This distributes whole percentage points by rounding down first, then
+    // handing the leftover points to whichever tiers had the largest
+    // fractional remainder, guaranteeing the three values sum to exactly 100.
+    const pcts = { foundation: 0, standard: 0, advanced: 0 };
+    if (totalSessions > 0) {
+      const raw = tierOrder.map(tier => (tiers[tier] / totalSessions) * 100);
+      const floors = raw.map(Math.floor);
+      let remainder = 100 - floors.reduce((a, b) => a + b, 0);
+      const byRemainder = raw
+        .map((r, i) => ({ tier: tierOrder[i], frac: r - Math.floor(r) }))
+        .sort((a, b) => b.frac - a.frac);
+      tierOrder.forEach((tier, i) => { pcts[tier] = floors[i]; });
+      for (let k = 0; k < remainder; k++) pcts[byRemainder[k].tier]++;
+    }
+
+    tierOrder.forEach(tier => {
       const count = tiers[tier];
-      const pct = totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
+      const pct = pcts[tier];
       document.getElementById(`${tier}Count`).textContent = `${count} session${count === 1 ? '' : 's'}`;
       document.getElementById(`${tier}Pct`).textContent = `${pct}%`;
       document.getElementById(`${tier}Bar`).style.width = `${pct}%`;
