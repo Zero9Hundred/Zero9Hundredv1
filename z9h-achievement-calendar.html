@@ -96,6 +96,9 @@
   }
   .sheet-overlay.open .sheet{ transform:translateY(0); }
   .sheet-handle{ width:36px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 18px auto; }
+  .sheet-back-btn{ width:32px; height:32px; border-radius:50%; background:var(--surface); border:1px solid var(--path-accent); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:opacity 0.2s ease; margin-bottom:14px; }
+  .sheet-back-btn:active{ opacity:0.7; }
+  .sheet-back-btn svg{ width:14px; height:14px; stroke:var(--path-accent); }
   .sheet-title-row{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:16px; }
   .sheet-mission-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; font-size:21px; color:var(--text); line-height:1.15; min-width:0; }
   .sheet-date-badge{ display:flex; align-items:center; gap:5px; font-size:9.5px; letter-spacing:0.6px; text-transform:uppercase; color:var(--path-accent); font-weight:700; white-space:nowrap; flex-shrink:0; }
@@ -207,6 +210,7 @@
 <div class="sheet-overlay" id="sheetOverlay">
   <div class="sheet" id="sheet">
     <div class="sheet-handle"></div>
+    <button class="sheet-back-btn" id="sheetBackBtn" type="button" aria-label="Back to Calendar"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="sheet-title-row">
       <div class="sheet-mission-title" id="sheetMissionTitle">Upper Body Push</div>
       <div class="sheet-date-badge" id="sheetDateBadge">
@@ -620,6 +624,8 @@
   sheetOverlay.addEventListener('click', (e) => {
     if (e.target === sheetOverlay) closeSheet();
   });
+
+  document.getElementById('sheetBackBtn').addEventListener('click', closeSheet);
 
   sheetActionBtn.addEventListener('click', () => {
     if (!sheetState || !sheetState.mission || sheetActionBtn.disabled) return;
