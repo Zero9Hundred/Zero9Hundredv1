@@ -64,15 +64,25 @@
   .day-dot.done.today{ background:var(--platinum); border:2px solid var(--path-accent); }
   .day-dot.done svg{ width:13px; height:13px; stroke:#050608; }
 
-  .calendar-btn{ width:100%; margin-top:2px; padding:13px; border-radius:12px; border:1px solid var(--path-accent); background:color-mix(in srgb, var(--path-accent) 10%, transparent); color:var(--path-accent); font-family:'Inter'; font-weight:700; font-size:12.5px; letter-spacing:0.3px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:opacity 0.15s ease; }
-  .calendar-btn svg{ width:15px; height:15px; flex-shrink:0; }
-  .calendar-btn:active{ opacity:0.7; }
-
   /* ---------- SESSION STATS ---------- */
   .stats-row{ display:flex; gap:8px; }
   .stat-card{ flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px; text-align:center; }
   .stat-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:22px; color:var(--path-accent); line-height:1; }
   .stat-label{ font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-top:6px; }
+
+  /* ---------- TRAINING BREAKDOWN ---------- */
+  .breakdown-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .total-minutes-row{ display:flex; align-items:baseline; gap:8px; margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+  .total-minutes-num{ font-family:'Oswald',sans-serif; font-size:38px; font-weight:700; color:var(--path-accent); line-height:1; text-shadow:0 0 20px color-mix(in srgb, var(--path-accent) 50%, transparent); }
+  .total-minutes-label{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); font-weight:600; }
+
+  .tier-bars{ display:flex; flex-direction:column; gap:14px; }
+  .tier-bar-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; }
+  .tier-bar-name{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; font-size:12.5px; letter-spacing:0.3px; color:var(--text); }
+  .tier-bar-meta{ font-size:10.5px; color:var(--text-faint); }
+  .tier-bar-pct{ font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--path-accent); margin-left:6px; }
+  .tier-bar-track{ width:100%; height:10px; border-radius:5px; background:var(--surface-alt); overflow:hidden; }
+  .tier-bar-fill{ height:100%; border-radius:5px; background:var(--path-accent); box-shadow:0 0 8px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:width 0.4s ease; }
 
   /* ---------- BOTTOM NAV ---------- */
   nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(5,6,8,0.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; z-index:10; }
@@ -131,10 +141,39 @@
           </div>
         </div>
       </div>
-      <button class="calendar-btn" id="calendarBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-        View Calendar &amp; Log Past Sessions
-      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="eyebrow">Training Breakdown</span>
+    <div class="breakdown-card">
+      <div class="total-minutes-row">
+        <span class="total-minutes-num" id="totalMinutes">0</span>
+        <span class="total-minutes-label">Total Minutes Trained</span>
+      </div>
+      <div class="tier-bars">
+        <div class="tier-bar-row">
+          <div class="tier-bar-head">
+            <span class="tier-bar-name">Foundation</span>
+            <span><span class="tier-bar-meta" id="foundationCount">0 sessions</span><span class="tier-bar-pct" id="foundationPct">0%</span></span>
+          </div>
+          <div class="tier-bar-track"><div class="tier-bar-fill" id="foundationBar" style="width:0%"></div></div>
+        </div>
+        <div class="tier-bar-row">
+          <div class="tier-bar-head">
+            <span class="tier-bar-name">Standard</span>
+            <span><span class="tier-bar-meta" id="standardCount">0 sessions</span><span class="tier-bar-pct" id="standardPct">0%</span></span>
+          </div>
+          <div class="tier-bar-track"><div class="tier-bar-fill" id="standardBar" style="width:0%"></div></div>
+        </div>
+        <div class="tier-bar-row">
+          <div class="tier-bar-head">
+            <span class="tier-bar-name">Advanced</span>
+            <span><span class="tier-bar-meta" id="advancedCount">0 sessions</span><span class="tier-bar-pct" id="advancedPct">0%</span></span>
+          </div>
+          <div class="tier-bar-track"><div class="tier-bar-fill" id="advancedBar" style="width:0%"></div></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -200,6 +239,26 @@
     return `${y}-${m}-${day}`;
   }
 
+  // Total minutes and per-tier volume — all-time, every session including
+  // repeats (this is "how much have I actually put in", not a streak
+  // metric, so unique-day rules from the badge system don't apply here).
+  function renderBreakdown(rows) {
+    const totalMinutes = rows.reduce((sum, r) => sum + (r.time_minutes || 0), 0);
+    document.getElementById('totalMinutes').textContent = totalMinutes.toLocaleString();
+
+    const totalSessions = rows.length;
+    const tiers = { foundation: 0, standard: 0, advanced: 0 };
+    rows.forEach(r => { if (tiers.hasOwnProperty(r.tier)) tiers[r.tier]++; });
+
+    ['foundation', 'standard', 'advanced'].forEach(tier => {
+      const count = tiers[tier];
+      const pct = totalSessions > 0 ? Math.round((count / totalSessions) * 100) : 0;
+      document.getElementById(`${tier}Count`).textContent = `${count} session${count === 1 ? '' : 's'}`;
+      document.getElementById(`${tier}Pct`).textContent = `${pct}%`;
+      document.getElementById(`${tier}Bar`).style.width = `${pct}%`;
+    });
+  }
+
   function loadStreakData() {
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -219,14 +278,18 @@
           withTimeout(client.from('profiles').select('current_streak, longest_streak').eq('id', user.id).single()),
           withTimeout(client.from('mission_completions').select('completed_date')
             .eq('user_id', user.id)
-            .gte('completed_date', dateKey(firstOfMonth)))
+            .gte('completed_date', dateKey(firstOfMonth))),
+          // All-time tier + minutes — feeds the Training Breakdown card below.
+          withTimeout(client.from('mission_completions').select('tier, time_minutes')
+            .eq('user_id', user.id))
         ]);
       })
       .then(results => {
         if (!results) return; // redirected to login above
-        const [profileResult, monthResult] = results;
+        const [profileResult, monthResult, breakdownResult] = results;
         if (profileResult.error) throw profileResult.error;
         if (monthResult.error) throw monthResult.error;
+        if (breakdownResult.error) throw breakdownResult.error;
 
         const streak = (profileResult.data && profileResult.data.current_streak) || 0;
         const longestStreak = (profileResult.data && profileResult.data.longest_streak) || 0;
@@ -259,6 +322,8 @@
           if (completedDates.has(key)) dot.classList.add('done');
           if (key === dateKey(now)) dot.classList.add('today');
         });
+
+        renderBreakdown(breakdownResult.data || []);
       })
       .catch(err => {
         console.warn('Failed to load streak data:', err.message);
@@ -281,10 +346,6 @@
   }
 
   waitForSupabase(loadStreakData);
-
-  document.getElementById('calendarBtn').addEventListener('click', () => {
-    window.location.href = 'z9h-achievement-calendar.html';
-  });
 
   document.getElementById('backBtn').addEventListener('click', () => {
     window.location.href = 'z9h-home-screen-v2.html';
