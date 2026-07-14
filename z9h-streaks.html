@@ -42,45 +42,43 @@
   .section{ padding:0 20px; margin-bottom:16px; margin-top:22px; }
 
   /* ---------- STREAK CARD ---------- */
-  .streak-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:flex; flex-direction:column; gap:18px; }
-  .streak-left{ display:flex; flex-direction:column; }
+  .streak-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .streak-top-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .streak-left{ display:flex; flex-direction:column; min-width:0; }
+  .streak-mini-stats{ display:flex; flex-direction:column; gap:12px; flex-shrink:0; width:92px; text-align:right; padding-left:14px; border-left:1px solid var(--border); }
+  .mini-stat-num{ display:block; font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:var(--path-accent); line-height:1; }
+  .mini-stat-label{ display:block; font-size:8.5px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-top:4px; white-space:nowrap; }
   .streak-count{ display:flex; align-items:baseline; gap:6px; }
   .streak-num{ font-family:'Oswald',sans-serif; font-size:38px; font-weight:700; color:var(--text); line-height:1; }
   .streak-flame{ width:20px; height:20px; }
   .streak-label{ font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-top:6px; }
   .streak-msg{ font-size:12px; color:var(--text-dim); margin-top:4px; }
 
-  .day-grid{ display:flex; flex-direction:column; gap:10px; }
-  .day-row{ display:flex; gap:8px; }
-  .day-row.weekday{ justify-content:space-between; }
-  .day-row.weekend{ align-items:center; justify-content:space-between; border:1.5px dashed var(--border); border-radius:12px; padding:10px 16px; }
-  .weekend-label{ font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--text-faint); font-weight:700; white-space:nowrap; }
-  .weekend-dots{ display:contents; }
-  .day-dot-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-  .day-letter{ font-size:9px; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; }
-  .day-dot{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface-alt); border:1px solid var(--border); }
+  .day-grid{ display:flex; flex-direction:column; gap:8px; }
+  .day-row.all-week{ display:flex; justify-content:space-between; align-items:flex-start; gap:4px; }
+  .weekend-group{ display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:5px; width:92px; box-sizing:border-box; border:1.5px dashed var(--border); border-radius:10px; padding:2px 6px 4px 6px; margin-top:-2px; }
+  .weekend-dots-row{ display:flex; gap:5px; margin-top:1px; }
+  .weekend-caption{ font-size:7px; letter-spacing:0.3px; text-transform:uppercase; color:var(--text-faint); font-weight:700; white-space:nowrap; }
+  .day-dot-wrap{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .day-letter{ font-size:8.5px; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; }
+  .day-dot{ width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface-alt); border:1px solid var(--border); }
   .day-dot.done{ background:var(--platinum); border-color:var(--platinum); }
   .day-dot.today{ background:var(--surface-alt); border:2px solid var(--path-accent); }
   .day-dot.done.today{ background:var(--platinum); border:2px solid var(--path-accent); }
-  .day-dot.done svg{ width:13px; height:13px; stroke:#050608; }
-
-  /* ---------- SESSION STATS ---------- */
-  .stats-row{ display:flex; gap:8px; }
-  .stat-card{ flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px; text-align:center; }
-  .stat-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:22px; color:var(--path-accent); line-height:1; }
-  .stat-label{ font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-faint); font-weight:700; margin-top:6px; }
+  .day-dot.done svg{ width:11px; height:11px; stroke:#050608; }
 
   /* ---------- TRAINING BREAKDOWN ---------- */
   .breakdown-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
-  .total-minutes-row{ display:flex; align-items:baseline; gap:8px; margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--border); }
-  .total-minutes-num{ font-family:'Oswald',sans-serif; font-size:38px; font-weight:700; color:var(--path-accent); line-height:1; text-shadow:0 0 20px color-mix(in srgb, var(--path-accent) 50%, transparent); }
-  .total-minutes-label{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); font-weight:600; }
+  .breakdown-row{ display:flex; gap:16px; align-items:center; }
+  .total-minutes-block{ display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; width:74px; text-align:center; padding-right:16px; border-right:1px solid var(--border); }
+  .total-minutes-num{ font-family:'Oswald',sans-serif; font-size:32px; font-weight:700; color:var(--path-accent); line-height:1; text-shadow:0 0 20px color-mix(in srgb, var(--path-accent) 50%, transparent); }
+  .total-minutes-label{ font-size:9px; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-dim); font-weight:600; line-height:1.4; margin-top:6px; }
 
-  .tier-bars{ display:flex; flex-direction:column; gap:14px; }
+  .tier-bars{ display:flex; flex-direction:column; gap:12px; flex:1; min-width:0; }
   .tier-bar-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; }
-  .tier-bar-name{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; font-size:12.5px; letter-spacing:0.3px; color:var(--text); }
-  .tier-bar-meta{ font-size:10.5px; color:var(--text-faint); }
-  .tier-bar-pct{ font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--path-accent); margin-left:6px; }
+  .tier-bar-name{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; font-size:11.5px; letter-spacing:0.3px; color:var(--text); }
+  .tier-bar-meta{ font-size:9.5px; color:var(--text-faint); }
+  .tier-bar-pct{ font-family:'Oswald',sans-serif; font-weight:700; font-size:12px; color:var(--path-accent); margin-left:5px; }
   .tier-bar-track{ width:100%; height:10px; border-radius:5px; background:var(--surface-alt); overflow:hidden; }
   .tier-bar-fill{ height:100%; border-radius:5px; background:var(--path-accent); box-shadow:0 0 8px color-mix(in srgb, var(--path-accent) 65%, transparent); transition:width 0.4s ease; }
 
@@ -108,36 +106,35 @@
   <span class="page-eyebrow">Streaks</span>
 
   <div class="section" style="margin-top:0;">
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="statSessionsMonth">0</div><div class="stat-label">Sessions This Month</div></div>
-      <div class="stat-card"><div class="stat-num" id="statLongest">0</div><div class="stat-label">Longest Streak</div></div>
-    </div>
-  </div>
-
-  <div class="section">
     <span class="eyebrow">Discipline Streak</span>
     <div class="streak-card">
-      <div class="streak-left">
-        <div class="streak-count">
-          <span class="streak-num" id="streakNum">0</span>
-          <svg class="streak-flame" viewBox="0 0 24 24" fill="none" stroke="var(--path-accent)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      <div class="streak-top-row">
+        <div class="streak-left">
+          <div class="streak-count">
+            <span class="streak-num" id="streakNum">0</span>
+            <svg class="streak-flame" viewBox="0 0 24 24" fill="none" stroke="var(--path-accent)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          </div>
+          <span class="streak-label">Days Completed</span>
+          <span class="streak-msg" id="streakMsg">Discipline compounds daily.</span>
         </div>
-        <span class="streak-label">Days Completed</span>
-        <span class="streak-msg" id="streakMsg">Discipline compounds daily.</span>
+        <div class="streak-mini-stats">
+          <div class="mini-stat"><span class="mini-stat-num" id="statSessionsMonth">0</span><span class="mini-stat-label">This Month</span></div>
+          <div class="mini-stat"><span class="mini-stat-num" id="statLongest">0</span><span class="mini-stat-label">Longest</span></div>
+        </div>
       </div>
       <div class="day-grid">
-        <div class="day-row weekday">
+        <div class="day-row all-week">
           <div class="day-dot-wrap" data-day="1"><span class="day-letter">MON</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
           <div class="day-dot-wrap" data-day="2"><span class="day-letter">TUE</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
           <div class="day-dot-wrap" data-day="3"><span class="day-letter">WED</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
           <div class="day-dot-wrap" data-day="4"><span class="day-letter">THU</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
           <div class="day-dot-wrap" data-day="5"><span class="day-letter">FRI</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-        </div>
-        <div class="day-row weekend">
-          <span class="weekend-label">Weekend Bonus</span>
-          <div class="weekend-dots">
-            <div class="day-dot-wrap" data-day="6"><span class="day-letter">SAT</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-            <div class="day-dot-wrap" data-day="0"><span class="day-letter">SUN</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          <div class="weekend-group">
+            <div class="weekend-dots-row">
+              <div class="day-dot-wrap" data-day="6"><span class="day-letter">SAT</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+              <div class="day-dot-wrap" data-day="0"><span class="day-letter">SUN</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+            </div>
+            <span class="weekend-caption">Weekend Bonus</span>
           </div>
         </div>
       </div>
@@ -147,31 +144,33 @@
   <div class="section">
     <span class="eyebrow">Training Breakdown</span>
     <div class="breakdown-card">
-      <div class="total-minutes-row">
-        <span class="total-minutes-num" id="totalMinutes">0</span>
-        <span class="total-minutes-label">Total Minutes Trained</span>
-      </div>
-      <div class="tier-bars">
-        <div class="tier-bar-row">
-          <div class="tier-bar-head">
-            <span class="tier-bar-name">Foundation</span>
-            <span><span class="tier-bar-meta" id="foundationCount">0 sessions</span><span class="tier-bar-pct" id="foundationPct">0%</span></span>
-          </div>
-          <div class="tier-bar-track"><div class="tier-bar-fill" id="foundationBar" style="width:0%"></div></div>
+      <div class="breakdown-row">
+        <div class="total-minutes-block">
+          <span class="total-minutes-num" id="totalMinutes">0</span>
+          <span class="total-minutes-label">Total<br>Minutes<br>Trained</span>
         </div>
-        <div class="tier-bar-row">
-          <div class="tier-bar-head">
-            <span class="tier-bar-name">Standard</span>
-            <span><span class="tier-bar-meta" id="standardCount">0 sessions</span><span class="tier-bar-pct" id="standardPct">0%</span></span>
+        <div class="tier-bars">
+          <div class="tier-bar-row">
+            <div class="tier-bar-head">
+              <span class="tier-bar-name">Foundation</span>
+              <span><span class="tier-bar-meta" id="foundationCount">0 sessions</span><span class="tier-bar-pct" id="foundationPct">0%</span></span>
+            </div>
+            <div class="tier-bar-track"><div class="tier-bar-fill" id="foundationBar" style="width:0%"></div></div>
           </div>
-          <div class="tier-bar-track"><div class="tier-bar-fill" id="standardBar" style="width:0%"></div></div>
-        </div>
-        <div class="tier-bar-row">
-          <div class="tier-bar-head">
-            <span class="tier-bar-name">Advanced</span>
-            <span><span class="tier-bar-meta" id="advancedCount">0 sessions</span><span class="tier-bar-pct" id="advancedPct">0%</span></span>
+          <div class="tier-bar-row">
+            <div class="tier-bar-head">
+              <span class="tier-bar-name">Standard</span>
+              <span><span class="tier-bar-meta" id="standardCount">0 sessions</span><span class="tier-bar-pct" id="standardPct">0%</span></span>
+            </div>
+            <div class="tier-bar-track"><div class="tier-bar-fill" id="standardBar" style="width:0%"></div></div>
           </div>
-          <div class="tier-bar-track"><div class="tier-bar-fill" id="advancedBar" style="width:0%"></div></div>
+          <div class="tier-bar-row">
+            <div class="tier-bar-head">
+              <span class="tier-bar-name">Advanced</span>
+              <span><span class="tier-bar-meta" id="advancedCount">0 sessions</span><span class="tier-bar-pct" id="advancedPct">0%</span></span>
+            </div>
+            <div class="tier-bar-track"><div class="tier-bar-fill" id="advancedBar" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
     </div>
