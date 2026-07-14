@@ -41,33 +41,6 @@
   .eyebrow{ font-size:11px; letter-spacing:1.8px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-bottom:10px; display:block; }
   .section{ padding:0 20px; margin-bottom:16px; margin-top:22px; }
 
-  /* ---------- STREAK CARD (moved here from Home Console) ---------- */
-  .streak-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:flex; flex-direction:column; gap:18px; }
-  .streak-left{ display:flex; flex-direction:column; }
-  .streak-count{ display:flex; align-items:baseline; gap:6px; }
-  .streak-num{ font-family:'Oswald',sans-serif; font-size:38px; font-weight:700; color:var(--text); line-height:1; }
-  .streak-flame{ width:20px; height:20px; }
-  .streak-label{ font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-dim); font-weight:600; margin-top:6px; }
-  .streak-msg{ font-size:12px; color:var(--text-dim); margin-top:4px; }
-
-  .day-grid{ display:flex; flex-direction:column; gap:10px; }
-  .day-row{ display:flex; gap:8px; }
-  .day-row.weekday{ justify-content:space-between; }
-  .day-row.weekend{ align-items:center; justify-content:space-between; border:1.5px dashed var(--border); border-radius:12px; padding:10px 16px; }
-  .weekend-label{ font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--text-faint); font-weight:700; white-space:nowrap; }
-  .weekend-dots{ display:contents; }
-  .day-dot-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-  .day-letter{ font-size:9px; letter-spacing:0.4px; color:var(--text-faint); font-weight:700; }
-  .day-dot{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface-alt); border:1px solid var(--border); }
-  .day-dot.done{ background:var(--platinum); border-color:var(--platinum); }
-  .day-dot.today{ background:var(--surface-alt); border:2px solid var(--path-accent); }
-  .day-dot.done.today{ background:var(--platinum); border:2px solid var(--path-accent); }
-  .day-dot.done svg{ width:13px; height:13px; stroke:#050608; }
-
-  .calendar-btn{ width:100%; margin-top:2px; padding:13px; border-radius:12px; border:1px solid var(--path-accent); background:color-mix(in srgb, var(--path-accent) 10%, transparent); color:var(--path-accent); font-family:'Inter'; font-weight:700; font-size:12.5px; letter-spacing:0.3px; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:opacity 0.15s ease; }
-  .calendar-btn svg{ width:15px; height:15px; flex-shrink:0; }
-  .calendar-btn:active{ opacity:0.7; }
-
   /* ---------- MILESTONE BADGES (hex-frame language, matching Pathways) ---------- */
   .badge-header-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .badge-count{ font-family:'Oswald',sans-serif; font-weight:700; font-size:12px; color:var(--path-accent); letter-spacing:0.3px; }
@@ -116,40 +89,6 @@
   <span class="page-eyebrow">Achievements</span>
 
   <div class="section" style="margin-top:0;">
-    <span class="eyebrow">Discipline Streak</span>
-    <div class="streak-card">
-      <div class="streak-left">
-        <div class="streak-count">
-          <span class="streak-num" id="streakNum">0</span>
-          <svg class="streak-flame" viewBox="0 0 24 24" fill="none" stroke="var(--path-accent)" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        </div>
-        <span class="streak-label">Days Completed</span>
-        <span class="streak-msg" id="streakMsg">Discipline compounds daily.</span>
-      </div>
-      <div class="day-grid">
-        <div class="day-row weekday">
-          <div class="day-dot-wrap" data-day="1"><span class="day-letter">MON</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-          <div class="day-dot-wrap" data-day="2"><span class="day-letter">TUE</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-          <div class="day-dot-wrap" data-day="3"><span class="day-letter">WED</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-          <div class="day-dot-wrap" data-day="4"><span class="day-letter">THU</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-          <div class="day-dot-wrap" data-day="5"><span class="day-letter">FRI</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-        </div>
-        <div class="day-row weekend">
-          <span class="weekend-label">Weekend Bonus</span>
-          <div class="weekend-dots">
-            <div class="day-dot-wrap" data-day="6"><span class="day-letter">SAT</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-            <div class="day-dot-wrap" data-day="0"><span class="day-letter">SUN</span><span class="day-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#050608" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
-          </div>
-        </div>
-      </div>
-      <button class="calendar-btn" id="calendarBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-        View Calendar &amp; Log Past Sessions
-      </button>
-    </div>
-  </div>
-
-  <div class="section">
     <div class="badge-header-row">
       <span class="eyebrow" style="margin-bottom:0;">Milestones &amp; Badges</span>
       <span class="badge-count" id="badgeCount">0 / 0</span>
@@ -159,8 +98,8 @@
 
   <nav aria-label="Primary">
     <a href="z9h-home-screen-v2.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</a>
-    <a href="#" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M3 9h6M15 9h6M3 15h6M15 15h6"/></svg>Training</a>
-    <a href="#" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 3v18M5 4h11l-2 4 2 4H5"/></svg>Challenges</a>
+    <a href="z9h-achievement-calendar.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Calendar</a>
+    <a href="z9h-streaks.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>Streaks</a>
     <a href="#" class="nav-item active"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-8 0L7 4z"/><path d="M5 4h2v4a3 3 0 0 1-3-3c0-.5.2-1 .5-1zM19 4h-2v4a3 3 0 0 0 3-3c0-.5-.2-1-.5-1z"/></svg>Achievements</a>
     <a href="#" class="nav-item"><span class="nav-dot-alert"></span><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
   </nav>
@@ -207,16 +146,6 @@
         err => { clearTimeout(timer); reject(err); }
       );
     });
-  }
-
-  // Uses LOCAL calendar date components — not toISOString(), which converts
-  // to UTC first and can silently roll the date back or forward a day for
-  // anyone not in UTC+0 (e.g. BST).
-  function dateKey(d){
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
   }
 
   // ============================================================
@@ -382,7 +311,7 @@
     document.getElementById('badgeCount').textContent = `${unlockedCount} / ${BADGES.length}`;
   }
 
-  function loadStreakAndWeek() {
+  function loadBadgeStats() {
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     withTimeout(client.auth.getSession())
@@ -394,8 +323,8 @@
           return null;
         }
 
-        // Full history in one call — feeds the weekly dots (filtered client-side),
-        // total-completions badges, and session-time badges.
+        // Full history in one call — feeds the total-completions badges and
+        // session-time badges (weekly dots moved to the new Streaks page).
         // exercises + exercise_variants are small static tables (28 + 84 rows) —
         // fetched whole and joined client-side against completions to sum reps/
         // seconds per movement_type, rather than a complex server-side join.
@@ -416,14 +345,8 @@
         if (exercisesResult.error) throw exercisesResult.error;
         if (variantsResult.error) throw variantsResult.error;
 
-        const streak = (profileResult.data && profileResult.data.current_streak) || 0;
         const longestStreak = (profileResult.data && profileResult.data.longest_streak) || 0;
         const history = historyResult.data || [];
-        const completedDates = new Set(history.map(row => row.completed_date));
-
-        document.getElementById('streakNum').textContent = streak;
-        document.getElementById('streakMsg').textContent =
-          streak > 0 ? 'Discipline compounds daily.' : 'Complete a mission to start your streak.';
 
         // ---- Derive badge stats from the same history fetch ----
         // Unique DAYS trained, not row count — deliberate, now that repeat
@@ -455,28 +378,9 @@
         });
 
         renderBadges({ longestStreak, totalCompletions, maxSessionMinutes, movementReps, movementSeconds });
-
-        const now = new Date();
-        const todayDow = now.getDay();
-        const mondayOffset = todayDow === 0 ? -6 : 1 - todayDow;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() + mondayOffset);
-
-        document.querySelectorAll('.day-dot-wrap').forEach(wrap => {
-          const dow = Number(wrap.getAttribute('data-day'));
-          const offsetFromMonday = dow === 0 ? 6 : dow - 1;
-          const cellDate = new Date(monday);
-          cellDate.setDate(monday.getDate() + offsetFromMonday);
-          const key = dateKey(cellDate);
-          const dot = wrap.querySelector('.day-dot');
-
-          if (completedDates.has(key)) dot.classList.add('done');
-          if (key === dateKey(now)) dot.classList.add('today');
-        });
       })
       .catch(err => {
-        console.warn('Failed to load streak/week data:', err.message);
-        document.getElementById('streakMsg').textContent = 'Could not load streak data.';
+        console.warn('Failed to load badge data:', err.message);
       });
   }
 
@@ -488,17 +392,13 @@
     if (typeof window.supabase !== 'undefined') {
       callback();
     } else if (retries >= 10) {
-      document.getElementById('streakMsg').textContent = 'Could not load — refresh the page.';
+      console.warn('Supabase failed to load — badges could not be fetched.');
     } else {
       setTimeout(() => waitForSupabase(callback, retries + 1), 500);
     }
   }
 
-  waitForSupabase(loadStreakAndWeek);
-
-  document.getElementById('calendarBtn').addEventListener('click', () => {
-    window.location.href = 'z9h-achievement-calendar.html';
-  });
+  waitForSupabase(loadBadgeStats);
 
   document.getElementById('backBtn').addEventListener('click', () => {
     window.location.href = 'z9h-home-screen-v2.html';
