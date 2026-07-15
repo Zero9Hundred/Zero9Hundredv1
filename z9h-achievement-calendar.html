@@ -60,10 +60,10 @@
   .cal-cell{ aspect-ratio:1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; border:none; padding:0; }
   .cal-cell.empty{ visibility:hidden; }
   .cal-cell.pending{
-    background:transparent; border:1.5px solid var(--path-accent); color:var(--path-accent); cursor:pointer; transition:all 0.15s ease;
+    background:transparent; border:1.5px solid var(--border); color:var(--text-dim); cursor:pointer; transition:all 0.15s ease;
   }
   .cal-cell.pending:active{ opacity:0.7; }
-  .cal-cell.today.pending{ box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 70%, transparent); }
+  .cal-cell.today.pending{ border-color:var(--path-accent); color:var(--path-accent); box-shadow:0 0 10px -2px color-mix(in srgb, var(--path-accent) 70%, transparent); }
   .cal-cell.done{
     background:#2fbf71; border:1px solid #2fbf71; color:var(--bg); cursor:pointer;
     box-shadow:0 0 10px -2px rgba(47,191,113,0.7); transition:opacity 0.15s ease;
