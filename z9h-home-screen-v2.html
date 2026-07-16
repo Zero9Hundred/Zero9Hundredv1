@@ -129,6 +129,10 @@
   .nav-item svg{ width:23px; height:23px; stroke:var(--text-faint); fill:none; }
   .nav-item.active{ color:var(--platinum); }
   .nav-item.active svg{ stroke:var(--platinum); }
+
+  /* ---------- SESSION GATE SPINNER ---------- */
+  @keyframes z9hSpin{ to{ transform:rotate(360deg); } }
+  .z9h-spinner{ width:30px; height:30px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--signal); animation:z9hSpin 0.8s linear infinite; }
 </style>
 </head>
 <body>
@@ -142,8 +146,8 @@
      ever flashing visible before an auth check completes.
 ============================================================ -->
 <div id="sessionGate" style="position:fixed; inset:0; background:#050608; z-index:999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
-  <div style="font-family:'Oswald',sans-serif; font-weight:700; letter-spacing:2px; color:#C6CED4; font-size:14px; text-transform:uppercase;">VERIFYING ACCESS</div>
-  <div id="sessionGateMsg" style="font-size:12px; color:#8A9199;">Checking your session&hellip;</div>
+  <div class="z9h-spinner"></div>
+  <div id="sessionGateMsg" style="font-size:12px; color:#8A9199;"></div>
 </div>
 
 <script defer>
