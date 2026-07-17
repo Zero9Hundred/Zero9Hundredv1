@@ -14,6 +14,8 @@
     --border:#202530;
     --platinum:#C6CED4;
     --signal:#4E89FF;
+    --nav-bg:rgba(5,6,8,0.92);
+    --watermark-opacity:0.03;
     --text:#F1F3F7;
     --text-dim:#8A9199;
     --text-faint:#54595E;
@@ -76,6 +78,38 @@
 </style>
 </head>
 <body>
+<script>
+  // ============================================================
+  // THEME LAYER — must run before anything paints, or the page
+  // flashes the wrong theme for a frame. Applies the cached choice
+  // instantly; Profile and Home reconcile against the real saved
+  // value in the background.
+  // ============================================================
+  (function(){
+    var THEMES = {
+      dark:  { bg:'#050608', surface:'#0D0F14', surfaceAlt:'#12151B', border:'#202530', platinum:'#C6CED4', text:'#F1F3F7', textDim:'#8A9199', textFaint:'#54595E', navBg:'rgba(5,6,8,0.92)', watermarkOpacity:'0.03' },
+      light: { bg:'#EEF0F3', surface:'#FFFFFF', surfaceAlt:'#F4F5F8', border:'#D8DBE1', platinum:'#3A3F47', text:'#14161A', textDim:'#5C6169', textFaint:'#9AA0A8', navBg:'rgba(255,255,255,0.92)', watermarkOpacity:'0.045' }
+    };
+    function applyThemeMode(mode){
+      var t = THEMES[mode] || THEMES.dark;
+      var r = document.documentElement.style;
+      r.setProperty('--bg', t.bg);
+      r.setProperty('--surface', t.surface);
+      r.setProperty('--surface-alt', t.surfaceAlt);
+      r.setProperty('--border', t.border);
+      r.setProperty('--platinum', t.platinum);
+      r.setProperty('--text', t.text);
+      r.setProperty('--text-dim', t.textDim);
+      r.setProperty('--text-faint', t.textFaint);
+      r.setProperty('--nav-bg', t.navBg);
+      r.setProperty('--watermark-opacity', t.watermarkOpacity);
+    }
+    var cached = null;
+    try { cached = sessionStorage.getItem('z9h_theme_mode'); } catch(e){}
+    applyThemeMode(cached || 'dark');
+    window.__z9hApplyThemeMode = applyThemeMode;
+  })();
+</script>
 <!-- Same defensive pattern as Home Console: deferred, nothing below assumes it loaded until checked. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <div class="app">
@@ -132,7 +166,7 @@
     calisthenics: '#4E89FF',
     running:      '#FF8A00',
     strength:     '#FF3B30',
-    movement:     '#CCFF00',
+    movement:     '#22C55E',
     breathwork:   '#00E5FF',
     mind:         '#AF52DE'
   };

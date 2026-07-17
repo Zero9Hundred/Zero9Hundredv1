@@ -14,6 +14,8 @@
     --border:#202530;
     --platinum:#C6CED4;
     --signal:#4E89FF;
+    --nav-bg:rgba(5,6,8,0.92);
+    --watermark-opacity:0.03;
     --text:#F1F3F7;
     --text-dim:#8A9199;
     --text-faint:#54595E;
@@ -66,7 +68,7 @@
   .badge-card.unlocked .badge-lock-label{ color:var(--path-accent); }
 
   /* ---------- BOTTOM NAV (identical to Home Console) ---------- */
-  nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(5,6,8,0.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; z-index:10; }
+  nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:var(--nav-bg); backdrop-filter:blur(14px); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; z-index:10; }
   .nav-item{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--text-faint); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; text-decoration:none; min-width:56px; min-height:52px; padding:4px 2px; border-radius:12px; position:relative; }
   .nav-item svg{ width:23px; height:23px; stroke:var(--text-faint); fill:none; }
   .nav-item.active{ color:var(--platinum); }
@@ -75,6 +77,38 @@
 </style>
 </head>
 <body>
+<script>
+  // ============================================================
+  // THEME LAYER — must run before anything paints, or the page
+  // flashes the wrong theme for a frame. Applies the cached choice
+  // instantly; Profile and Home reconcile against the real saved
+  // value in the background.
+  // ============================================================
+  (function(){
+    var THEMES = {
+      dark:  { bg:'#050608', surface:'#0D0F14', surfaceAlt:'#12151B', border:'#202530', platinum:'#C6CED4', text:'#F1F3F7', textDim:'#8A9199', textFaint:'#54595E', navBg:'rgba(5,6,8,0.92)', watermarkOpacity:'0.03' },
+      light: { bg:'#EEF0F3', surface:'#FFFFFF', surfaceAlt:'#F4F5F8', border:'#D8DBE1', platinum:'#3A3F47', text:'#14161A', textDim:'#5C6169', textFaint:'#9AA0A8', navBg:'rgba(255,255,255,0.92)', watermarkOpacity:'0.045' }
+    };
+    function applyThemeMode(mode){
+      var t = THEMES[mode] || THEMES.dark;
+      var r = document.documentElement.style;
+      r.setProperty('--bg', t.bg);
+      r.setProperty('--surface', t.surface);
+      r.setProperty('--surface-alt', t.surfaceAlt);
+      r.setProperty('--border', t.border);
+      r.setProperty('--platinum', t.platinum);
+      r.setProperty('--text', t.text);
+      r.setProperty('--text-dim', t.textDim);
+      r.setProperty('--text-faint', t.textFaint);
+      r.setProperty('--nav-bg', t.navBg);
+      r.setProperty('--watermark-opacity', t.watermarkOpacity);
+    }
+    var cached = null;
+    try { cached = sessionStorage.getItem('z9h_theme_mode'); } catch(e){}
+    applyThemeMode(cached || 'dark');
+    window.__z9hApplyThemeMode = applyThemeMode;
+  })();
+</script>
 <!-- Same defensive pattern as Home Console: deferred, nothing below assumes it loaded until checked. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <div class="app">
@@ -101,7 +135,7 @@
     <a href="z9h-achievement-calendar.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Calendar</a>
     <a href="z9h-streaks.html" class="nav-item"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>Streaks</a>
     <a href="#" class="nav-item active"><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-8 0L7 4z"/><path d="M5 4h2v4a3 3 0 0 1-3-3c0-.5.2-1 .5-1zM19 4h-2v4a3 3 0 0 0 3-3c0-.5-.2-1-.5-1z"/></svg>Achievements</a>
-    <a href="#" class="nav-item"><span class="nav-dot-alert"></span><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+    <a href="z9h-profile.html" class="nav-item"><span class="nav-dot-alert"></span><svg fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
   </nav>
 
 </div>
@@ -119,7 +153,7 @@
     calisthenics: '#4E89FF',
     running:      '#FF8A00',
     strength:     '#FF3B30',
-    movement:     '#CCFF00',
+    movement:     '#22C55E',
     breathwork:   '#00E5FF',
     mind:         '#AF52DE'
   };
