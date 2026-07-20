@@ -184,7 +184,10 @@
       r.setProperty('--watermark-opacity', t.watermarkOpacity);
     }
     var cached = null;
-    try { cached = sessionStorage.getItem('z9h_theme_mode'); } catch(e){}
+    try {
+      var raw = sessionStorage.getItem('z9h_theme_mode');
+      cached = raw ? JSON.parse(raw) : null;
+    } catch(e){}
     applyThemeMode(cached || 'dark');
     window.__z9hApplyThemeMode = applyThemeMode;
   })();
